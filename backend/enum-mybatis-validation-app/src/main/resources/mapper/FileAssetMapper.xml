@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.enumapp.domain.file.FileAssetMapper">
+
+    <resultMap id="FileAssetMap" type="com.example.enumapp.domain.file.FileAsset">
+        <id property="id" column="id"/>
+        <result property="originalName" column="original_name"/>
+        <result property="storedName" column="stored_name"/>
+        <result property="contentType" column="content_type"/>
+        <result property="sizeBytes" column="size_bytes"/>
+        <result property="status" column="status"/>
+        <result property="ownerRef" column="owner_ref"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO demo_files (original_name, stored_name, content_type, size_bytes, status, owner_ref, created_at)
+        VALUES (#{originalName}, #{storedName}, #{contentType}, #{sizeBytes}, #{status}, #{ownerRef}, #{createdAt})
+    </insert>
+
+    <select id="findById" resultMap="FileAssetMap">
+        SELECT * FROM demo_files WHERE id = #{id}
+    </select>
+
+    <update id="updateStatusAndOwner">
+        UPDATE demo_files
+        SET status = #{status},
+            owner_ref = #{ownerRef}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM demo_files WHERE id = #{id}
+    </delete>
+
+    <select id="findTempOlderThan" resultMap="FileAssetMap">
+        SELECT * FROM demo_files
+        WHERE status = 'TEMP'
+          AND created_at &lt; #{threshold}
+    </select>
+</mapper>
