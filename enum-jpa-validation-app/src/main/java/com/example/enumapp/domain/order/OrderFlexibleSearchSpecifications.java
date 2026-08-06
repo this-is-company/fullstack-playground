@@ -1,12 +1,9 @@
 package com.example.enumapp.domain.order;
 
+import com.example.enumapp.common.jpa.ConditionBuilder;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Predicate;
 import org.springframework.data.jpa.domain.Specification;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public final class OrderFlexibleSearchSpecifications {
 
@@ -15,40 +12,26 @@ public final class OrderFlexibleSearchSpecifications {
 
     public static Specification<Order> from(OrderFlexibleSearchCriteria criteria) {
         return (root, query, cb) -> {
-            List<Predicate> predicates = new ArrayList<>();
+            var condition = ConditionBuilder.create(cb);
 
-            if (criteria.getCustomerName() != null) {
-                predicates.add(cb.like(
-                        cb.lower(root.get("customerName")),
-                        "%" + criteria.getCustomerName().toLowerCase() + "%"
-                ));
-            }
-            if (criteria.getStatus() != null) {
-                predicates.add(cb.equal(root.get("status"), criteria.getStatus()));
-            }
-            if (criteria.getPayMethod() != null) {
-                predicates.add(cb.equal(root.get("payMethod"), criteria.getPayMethod()));
-            }
-            if (criteria.getCreatedFrom() != null) {
-                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), criteria.getCreatedFrom()));
-            }
-            if (criteria.getCreatedTo() != null) {
-                if (criteria.isCreatedToInclusive()) {
-                    predicates.add(cb.lessThanOrEqualTo(root.get("createdAt"), criteria.getCreatedTo()));
-                } else {
-                    predicates.add(cb.lessThan(root.get("createdAt"), criteria.getCreatedTo()));
-                }
-            }
+            Join<Order, OrderItem> items = null;
             if (criteria.getMinQuantity() != null) {
-                Join<Order, OrderItem> items = root.join("items", JoinType.LEFT);
-                predicates.add(cb.greaterThanOrEqualTo(items.get("quantity"), criteria.getMinQuantity()));
+                items = root.join("items", JoinType.LEFT);
                 query.distinct(true);
             }
 
-            if (predicates.isEmpty()) {
-                return cb.conjunction();
-            }
-            return cb.and(predicates.toArray(Predicate[]::new));
+            return condition.and(
+                    condition.eq(root.get("status"), criteria.getStatus()),
+                    condition.like(root.get("customerName"), criteria.getCustomerName()),
+                    condition.eq(root.get("payMethod"), criteria.getPayMethod()),
+                    condition.range(
+                            root.get("createdAt"),
+                            criteria.getCreatedFrom(),
+                            criteria.getCreatedTo(),
+                            criteria.isCreatedToInclusive()
+                    ),
+                    items == null ? null : condition.goe(items.get("quantity"), criteria.getMinQuantity())
+            );
         };
     }
 }

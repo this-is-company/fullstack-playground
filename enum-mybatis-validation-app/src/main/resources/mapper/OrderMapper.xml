@@ -133,34 +133,4 @@
         ORDER BY o.id
     </select>
 
-    <!-- 유연 검색: Criteria Builder 결과의 null 필드는 &lt;if&gt; 로 제외 -->
-    <select id="searchFlexible" resultMap="OrderResultMap">
-        SELECT DISTINCT o.id, o.customer_name, o.status, o.pay_method, o.user_grade, o.created_at
-        FROM demo_orders o
-        LEFT JOIN demo_order_items i ON i.order_id = o.id
-        <where>
-            <if test="customerName != null and customerName != ''">
-                AND LOWER(o.customer_name) LIKE CONCAT('%', LOWER(#{customerName}), '%')
-            </if>
-            <if test="status != null">
-                AND o.status = #{status}
-            </if>
-            <if test="payMethod != null">
-                AND o.pay_method = #{payMethod}
-            </if>
-            <if test="createdFrom != null">
-                AND o.created_at &gt;= #{createdFrom}
-            </if>
-            <if test="createdTo != null and createdToInclusive">
-                AND o.created_at &lt;= #{createdTo}
-            </if>
-            <if test="createdTo != null and !createdToInclusive">
-                AND o.created_at &lt; #{createdTo}
-            </if>
-            <if test="minQuantity != null">
-                AND i.quantity &gt;= #{minQuantity}
-            </if>
-        </where>
-        ORDER BY o.id
-    </select>
 </mapper>

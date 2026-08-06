@@ -38,5 +38,10 @@ public interface OrderMapper {
 
     List<Order> searchByDateTimeBetween(OrderSearchCriteria criteria);
 
+    @org.apache.ibatis.annotations.SelectProvider(
+            type = OrderFlexibleSearchSqlProvider.class,
+            method = "searchFlexible"
+    )
+    @org.apache.ibatis.annotations.ResultMap("OrderResultMap")
     List<Order> searchFlexible(OrderFlexibleSearchCriteria criteria);
 }
