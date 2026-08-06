@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SSO Sample</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 48px auto; }
+    code { background: #f4f4f4; padding: 2px 6px; }
+  </style>
+</head>
+<body>
+<h1>Keycloak SSO 샘플</h1>
+
+<div th:if="${authenticated}">
+  <p>로그인됨: <strong th:text="${username}">user</strong></p>
+  <p><a href="/home">/home</a> · <a href="/api/me">/api/me</a></p>
+  <form th:action="@{/logout}" method="post">
+    <button type="submit">Logout</button>
+  </form>
+</div>
+
+<div th:unless="${authenticated}">
+  <p><a href="/oauth2/authorization/keycloak">Keycloak으로 로그인</a></p>
+</div>
+
+<hr/>
+<h2>API 토큰 검증 테스트</h2>
+<pre>
+# Keycloak에서 access token 발급 (Direct Access Grant)
+curl -s -X POST 'http://localhost:8180/realms/demo/protocol/openid-connect/token' \
+  -d 'grant_type=password' \
+  -d 'client_id=security-sso-app' \
+  -d 'client_secret=sso-app-secret' \
+  -d 'username=demo' \
+  -d 'password=demo123'
+
+# API 호출
+curl -H "Authorization: Bearer &lt;access_token&gt;" http://localhost:8091/api/me
+</pre>
+</body>
+</html>

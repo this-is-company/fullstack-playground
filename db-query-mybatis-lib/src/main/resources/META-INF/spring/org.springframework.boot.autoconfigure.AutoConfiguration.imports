@@ -1,0 +1,2 @@
+com.example.dbquerymybatis.autoconfigure.MybatisDataSourceAutoConfiguration
+com.example.dbquerymybatis.autoconfigure.MybatisDbQueryAutoConfiguration

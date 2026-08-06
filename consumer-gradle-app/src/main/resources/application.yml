@@ -1,0 +1,13 @@
+server:
+  port: 8082
+
+# DB 접속정보는 Nexus의 db-query-lib 기본값을 사용
+# db-query:
+#   datasource:
+#     url: jdbc:postgresql://localhost:5432/demodb
+#     username: demo
+#     password: demo123
+
+logging:
+  level:
+    com.example: INFO

@@ -1,0 +1,75 @@
+{
+  "realm": "demo",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": false,
+  "editUsernameAllowed": false,
+  "roles": {
+    "realm": [
+      { "name": "user", "description": "Regular user" },
+      { "name": "admin", "description": "Administrator" }
+    ]
+  },
+  "users": [
+    {
+      "username": "demo",
+      "enabled": true,
+      "email": "demo@example.com",
+      "emailVerified": true,
+      "firstName": "Demo",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "demo123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user"]
+    },
+    {
+      "username": "adminuser",
+      "enabled": true,
+      "email": "admin@example.com",
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "User",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": ["user", "admin"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "security-sso-app",
+      "name": "Security SSO App",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "sso-app-secret",
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:8091/*",
+        "http://localhost:8092/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8091",
+        "http://localhost:8092"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:8091/*##http://localhost:8092/*"
+      },
+      "fullScopeAllowed": true
+    }
+  ]
+}

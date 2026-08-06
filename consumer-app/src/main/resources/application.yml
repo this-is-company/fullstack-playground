@@ -1,0 +1,14 @@
+server:
+  port: 8080
+
+# DB 접속정보는 db-query-lib 기본값을 사용한다.
+# 필요하면 아래처럼 덮어쓸 수 있다.
+# db-query:
+#   datasource:
+#     url: jdbc:postgresql://localhost:5432/demodb
+#     username: demo
+#     password: demo123
+
+logging:
+  level:
+    com.example: INFO

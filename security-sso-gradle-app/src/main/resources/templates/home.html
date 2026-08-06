@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SSO Home</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 48px auto; }
+  </style>
+</head>
+<body>
+<h1>SSO 로그인 성공</h1>
+<p>username: <strong th:text="${username}">user</strong></p>
+<p>email: <span th:text="${email}">email</span></p>
+<p>authorities: <span th:text="${authorities}">[]</span></p>
+<p><a href="/api/me">/api/me</a> · <a href="/">index</a></p>
+<form th:action="@{/logout}" method="post">
+  <button type="submit">Logout</button>
+</form>
+</body>
+</html>

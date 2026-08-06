@@ -1,0 +1,2 @@
+com.example.dbquery.autoconfigure.DbQueryDataSourceAutoConfiguration
+com.example.dbquery.autoconfigure.DbQueryAutoConfiguration

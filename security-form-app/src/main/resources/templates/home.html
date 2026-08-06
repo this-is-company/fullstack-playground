@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Home</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 48px auto; }
+    code { background: #f4f4f4; padding: 2px 6px; }
+  </style>
+</head>
+<body>
+<h1>로그인 성공</h1>
+<p>user: <strong th:text="${username}">user</strong></p>
+<p>roles: <span th:text="${authorities}">[]</span></p>
+
+<ul>
+  <li><a href="/api/me">/api/me</a> (인증 필요)</li>
+  <li><a href="/api/public/hello">/api/public/hello</a></li>
+  <li sec:authorize="hasRole('ADMIN')"><a href="/api/admin/ping">/api/admin/ping</a></li>
+</ul>
+
+<form th:action="@{/logout}" method="post">
+  <button type="submit">Logout</button>
+</form>
+</body>
+</html>

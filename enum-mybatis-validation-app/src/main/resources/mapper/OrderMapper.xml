@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.enumapp.domain.order.OrderMapper">
+
+    <resultMap id="OrderResultMap" type="com.example.enumapp.domain.order.Order">
+        <id property="id" column="id"/>
+        <result property="customerName" column="customer_name"/>
+        <result property="status" column="status"/>
+        <result property="payMethod" column="pay_method"/>
+        <result property="userGrade" column="user_grade"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insertOrder" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO demo_orders (customer_name, status, pay_method, user_grade, created_at)
+        VALUES (
+            #{customerName},
+            #{status},
+            #{payMethod},
+            #{userGrade},
+            COALESCE(#{createdAt}, CURRENT_TIMESTAMP)
+        )
+    </insert>
+
+    <insert id="insertItem" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO demo_order_items (order_id, product_name, sku, quantity)
+        VALUES (#{orderId}, #{productName}, #{sku}, #{quantity})
+    </insert>
+
+    <select id="findById" resultMap="OrderResultMap">
+        SELECT id, customer_name, status, pay_method, user_grade, created_at
+        FROM demo_orders
+        WHERE id = #{id}
+    </select>
+
+    <select id="findItemsByOrderId" resultType="com.example.enumapp.domain.order.OrderItem">
+        SELECT id, order_id AS orderId, product_name AS productName, sku, quantity
+        FROM demo_order_items
+        WHERE order_id = #{orderId}
+        ORDER BY id
+    </select>
+
+    <update id="updateOrder">
+        UPDATE demo_orders
+        SET customer_name = #{customerName},
+            status = #{status},
+            pay_method = #{payMethod},
+            user_grade = #{userGrade}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateStatus">
+        UPDATE demo_orders
+        SET status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteItemsByOrderId">
+        DELETE FROM demo_order_items WHERE order_id = #{orderId}
+    </delete>
+
+    <delete id="deleteOrder">
+        DELETE FROM demo_orders WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteItemsByOrderIds">
+        DELETE FROM demo_order_items
+        WHERE order_id IN
+        <foreach collection="orderIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <delete id="deleteOrders">
+        DELETE FROM demo_orders
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </delete>
+
+    <select id="findAll" resultMap="OrderResultMap">
+        SELECT id, customer_name, status, pay_method, user_grade, created_at
+        FROM demo_orders
+        ORDER BY id
+    </select>
+
+    <select id="findByIds" resultMap="OrderResultMap">
+        SELECT id, customer_name, status, pay_method, user_grade, created_at
+        FROM demo_orders
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY id
+    </select>
+
+    <select id="searchBySingleDate" resultMap="OrderResultMap">
+        SELECT DISTINCT o.id, o.customer_name, o.status, o.pay_method, o.user_grade, o.created_at
+        FROM demo_orders o
+        LEFT JOIN demo_order_items i ON i.order_id = o.id
+        WHERE o.created_at &gt;= #{orderDate}
+          AND o.created_at &lt; #{orderDateEnd}
+        <if test="minQuantity != null">
+            AND i.quantity &gt;= #{minQuantity}
+        </if>
+        ORDER BY o.id
+    </select>
+
+    <select id="searchByDateBetween" resultMap="OrderResultMap">
+        SELECT DISTINCT o.id, o.customer_name, o.status, o.pay_method, o.user_grade, o.created_at
+        FROM demo_orders o
+        LEFT JOIN demo_order_items i ON i.order_id = o.id
+        WHERE o.created_at &gt;= #{fromDate}
+          AND o.created_at &lt; #{toDateEnd}
+        <if test="minQuantity != null">
+            AND i.quantity &gt;= #{minQuantity}
+        </if>
+        ORDER BY o.id
+    </select>
+
+    <!-- LocalDateTime between -->
+    <select id="searchByDateTimeBetween" resultMap="OrderResultMap">
+        SELECT DISTINCT o.id, o.customer_name, o.status, o.pay_method, o.user_grade, o.created_at
+        FROM demo_orders o
+        LEFT JOIN demo_order_items i ON i.order_id = o.id
+        WHERE o.created_at &gt;= #{fromDateTime}
+          AND o.created_at &lt;= #{toDateTime}
+        <if test="minQuantity != null">
+            AND i.quantity &gt;= #{minQuantity}
+        </if>
+        ORDER BY o.id
+    </select>
+</mapper>

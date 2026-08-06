@@ -1,0 +1,28 @@
+server:
+  port: 8092
+
+spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          keycloak:
+            client-id: security-sso-app
+            client-secret: sso-app-secret
+            scope: openid,profile,email
+            authorization-grant-type: authorization_code
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          keycloak:
+            issuer-uri: http://localhost:8180/realms/demo
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8180/realms/demo
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    org.springframework.security: INFO

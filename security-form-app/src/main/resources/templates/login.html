@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Form Login</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 420px; margin: 64px auto; }
+    label { display: block; margin-top: 12px; }
+    input { width: 100%; padding: 8px; box-sizing: border-box; }
+    button { margin-top: 16px; padding: 8px 16px; }
+    .error { color: #b00020; }
+    .hint { color: #555; font-size: 0.9rem; margin-top: 24px; }
+  </style>
+</head>
+<body>
+<h1>DB 사용자 로그인</h1>
+<p th:if="${param.error}" class="error">아이디 또는 비밀번호가 올바르지 않습니다.</p>
+<p th:if="${param.logout}">로그아웃되었습니다.</p>
+
+<form th:action="@{/login}" method="post">
+  <label>Username
+    <input type="text" name="username" autofocus/>
+  </label>
+  <label>Password
+    <input type="password" name="password"/>
+  </label>
+  <button type="submit">Login</button>
+</form>
+
+<div class="hint">
+  <p>admin / admin123 (ROLE_ADMIN)</p>
+  <p>user / user123 (ROLE_USER)</p>
+</div>
+</body>
+</html>
