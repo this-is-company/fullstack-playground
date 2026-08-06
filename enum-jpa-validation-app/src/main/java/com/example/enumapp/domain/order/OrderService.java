@@ -7,6 +7,7 @@ import com.example.enumapp.web.dto.OrderDateSearchRequest;
 import com.example.enumapp.web.dto.OrderFlexibleSearchRequest;
 import com.example.enumapp.web.dto.OrderRequest;
 import com.example.enumapp.web.dto.OrderResponse;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,17 +17,20 @@ import java.util.List;
 @Service
 public class OrderService {
 
-    private final OrderMapper orderMapper;
+    private final OrderRepository orderRepository;
 
-    public OrderService(OrderMapper orderMapper) {
-        this.orderMapper = orderMapper;
+    public OrderService(OrderRepository orderRepository) {
+        this.orderRepository = orderRepository;
     }
 
     @Transactional
     public OrderResponse create(OrderRequest request) {
         Order order = toEntity(request);
-        orderMapper.insertOrder(order);
-        saveItems(order.getId(), request.getItems());
+        if (order.getCreatedAt() == null) {
+            order.setCreatedAt(LocalDateTime.now());
+        }
+        applyItems(order, request.getItems());
+        orderRepository.save(order);
         return get(order.getId());
     }
 
@@ -34,61 +38,57 @@ public class OrderService {
     public OrderResponse createWithCreatedAt(OrderRequest request, LocalDateTime createdAt) {
         Order order = toEntity(request);
         order.setCreatedAt(createdAt);
-        orderMapper.insertOrder(order);
-        saveItems(order.getId(), request.getItems());
+        applyItems(order, request.getItems());
+        orderRepository.save(order);
         return get(order.getId());
     }
 
     @Transactional
     public OrderResponse update(OrderRequest request) {
-        Order existing = orderMapper.findById(request.getId());
-        if (existing == null) {
-            throw BusinessException.notFound(ApiMessageCodes.ORDER_NOT_FOUND, "order not found: " + request.getId());
+        Order existing = orderRepository.findWithItemsById(request.getId())
+                .orElseThrow(() -> BusinessException.notFound(
+                        ApiMessageCodes.ORDER_NOT_FOUND, "order not found: " + request.getId()
+                ));
+
+        existing.setCustomerName(request.getCustomerName());
+        existing.setUserGrade(request.getUserGrade());
+        if (request.getStatus() != null) {
+            existing.setStatus(request.getStatus());
         }
-        Order order = toEntity(request);
-        if (order.getStatus() == null) {
-            order.setStatus(existing.getStatus());
+        if (request.getPayMethod() != null) {
+            existing.setPayMethod(request.getPayMethod());
         }
-        if (order.getPayMethod() == null) {
-            order.setPayMethod(existing.getPayMethod());
-        }
-        orderMapper.updateOrder(order);
-        orderMapper.deleteItemsByOrderId(order.getId());
-        saveItems(order.getId(), request.getItems());
-        return get(order.getId());
+        applyItems(existing, request.getItems());
+        return get(existing.getId());
     }
 
     @Transactional(readOnly = true)
     public OrderResponse get(Long id) {
-        Order order = orderMapper.findById(id);
-        if (order == null) {
-            throw BusinessException.notFound(ApiMessageCodes.ORDER_NOT_FOUND, "order not found: " + id);
-        }
-        List<OrderItem> items = orderMapper.findItemsByOrderId(id);
-        order.setItems(items);
+        Order order = orderRepository.findWithItemsById(id)
+                .orElseThrow(() -> BusinessException.notFound(
+                        ApiMessageCodes.ORDER_NOT_FOUND, "order not found: " + id
+                ));
         return toResponse(order);
     }
 
     @Transactional
     public void delete(Long id) {
-        Order existing = orderMapper.findById(id);
-        if (existing == null) {
+        if (!orderRepository.existsById(id)) {
             throw BusinessException.notFound(ApiMessageCodes.ORDER_NOT_FOUND, "order not found: " + id);
         }
-        orderMapper.deleteItemsByOrderId(id);
-        orderMapper.deleteOrder(id);
+        orderRepository.deleteById(id);
     }
 
     @Transactional
     public OrderResponse cancel(Long id) {
-        Order existing = orderMapper.findById(id);
-        if (existing == null) {
-            throw BusinessException.notFound(ApiMessageCodes.ORDER_NOT_FOUND, "order not found: " + id);
-        }
+        Order existing = orderRepository.findById(id)
+                .orElseThrow(() -> BusinessException.notFound(
+                        ApiMessageCodes.ORDER_NOT_FOUND, "order not found: " + id
+                ));
         if (existing.getStatus() == OrderStatus.CANCELLED) {
             throw BusinessException.badRequest(ApiMessageCodes.BAD_REQUEST, "order already cancelled: " + id);
         }
-        orderMapper.updateStatus(id, OrderStatus.CANCELLED);
+        existing.setStatus(OrderStatus.CANCELLED);
         return get(id);
     }
 
@@ -105,7 +105,20 @@ public class OrderService {
                 && request.getToDateTime() != null && !request.getToDateTime().isBlank()) {
             return searchByDateTimeBetween(request);
         }
-        return mapList(orderMapper.findAll());
+        return mapList(orderRepository.findAllByOrderByIdAsc());
+    }
+
+    /**
+     * 유연 검색: 날짜/between/숫자/enum/문자열 — 모두 비어 있으면 전체 조회.
+     * Criteria Builder → JPA Specification.
+     */
+    @Transactional(readOnly = true)
+    public List<OrderResponse> searchFlexible(OrderFlexibleSearchRequest request) {
+        OrderFlexibleSearchCriteria criteria = OrderFlexibleSearchCriteriaBuilder.from(request);
+        return mapList(orderRepository.findAll(
+                OrderFlexibleSearchSpecifications.from(criteria),
+                Sort.by(Sort.Direction.ASC, "id")
+        ));
     }
 
     @Transactional
@@ -114,13 +127,13 @@ public class OrderService {
             throw BusinessException.badRequest(ApiMessageCodes.BAD_REQUEST, "status is required for bulk update");
         }
         for (Long id : ids) {
-            Order existing = orderMapper.findById(id);
-            if (existing == null) {
-                throw BusinessException.notFound(ApiMessageCodes.ORDER_NOT_FOUND, "order not found: " + id);
-            }
-            orderMapper.updateStatus(id, status);
+            Order existing = orderRepository.findById(id)
+                    .orElseThrow(() -> BusinessException.notFound(
+                            ApiMessageCodes.ORDER_NOT_FOUND, "order not found: " + id
+                    ));
+            existing.setStatus(status);
         }
-        return mapList(orderMapper.findByIds(ids));
+        return mapList(orderRepository.findByIdInOrderByIdAsc(ids));
     }
 
     @Transactional
@@ -128,8 +141,7 @@ public class OrderService {
         if (ids == null || ids.isEmpty()) {
             return;
         }
-        orderMapper.deleteItemsByOrderIds(ids);
-        orderMapper.deleteOrders(ids);
+        orderRepository.deleteAllById(ids);
     }
 
     @Transactional(readOnly = true)
@@ -138,8 +150,9 @@ public class OrderService {
         if (criteria.getOrderDate() == null) {
             throw BusinessException.badRequest(ApiMessageCodes.BAD_REQUEST, "orderDate is required");
         }
-        criteria.setOrderDateEnd(criteria.getOrderDate().plusDays(1));
-        return mapList(orderMapper.searchBySingleDate(criteria));
+        LocalDateTime from = criteria.getOrderDate().atStartOfDay();
+        LocalDateTime to = criteria.getOrderDate().plusDays(1).atStartOfDay();
+        return mapList(orderRepository.searchByCreatedAtRange(from, to, criteria.getMinQuantity()));
     }
 
     @Transactional(readOnly = true)
@@ -148,8 +161,9 @@ public class OrderService {
         if (criteria.getFromDate() == null || criteria.getToDate() == null) {
             throw BusinessException.badRequest(ApiMessageCodes.BAD_REQUEST, "fromDate and toDate are required");
         }
-        criteria.setToDateEnd(criteria.getToDate().plusDays(1));
-        return mapList(orderMapper.searchByDateBetween(criteria));
+        LocalDateTime from = criteria.getFromDate().atStartOfDay();
+        LocalDateTime to = criteria.getToDate().plusDays(1).atStartOfDay();
+        return mapList(orderRepository.searchByCreatedAtRange(from, to, criteria.getMinQuantity()));
     }
 
     @Transactional(readOnly = true)
@@ -158,23 +172,13 @@ public class OrderService {
         if (criteria.getFromDateTime() == null || criteria.getToDateTime() == null) {
             throw BusinessException.badRequest(ApiMessageCodes.BAD_REQUEST, "fromDateTime and toDateTime are required");
         }
-        return mapList(orderMapper.searchByDateTimeBetween(criteria));
+        return mapList(orderRepository.searchByCreatedAtDateTimeBetween(
+                criteria.getFromDateTime(),
+                criteria.getToDateTime(),
+                criteria.getMinQuantity()
+        ));
     }
 
-    /**
-     * 유연 검색: Criteria Builder → MyBatis 동적 SQL (&lt;if&gt;).
-     * 모든 조건이 비어 있으면 전체 목록.
-     */
-    @Transactional(readOnly = true)
-    public List<OrderResponse> searchFlexible(OrderFlexibleSearchRequest request) {
-        OrderFlexibleSearchCriteria criteria = OrderFlexibleSearchCriteriaBuilder.from(request);
-        return mapList(orderMapper.searchFlexible(criteria));
-    }
-
-    /**
-     * 문자열 날짜 → LocalDate/LocalDateTime 변환.
-     * minQuantity 는 Integer 그대로 유지 (null 이면 null, 0 으로 바꾸지 않음).
-     */
     public OrderSearchCriteria toCriteria(OrderDateSearchRequest request) {
         OrderSearchCriteria criteria = new OrderSearchCriteria();
         criteria.setOrderDate(DateStrings.toLocalDate(request.getOrderDate()));
@@ -187,21 +191,18 @@ public class OrderService {
     }
 
     private List<OrderResponse> mapList(List<Order> orders) {
-        return orders.stream().map(order -> {
-            order.setItems(orderMapper.findItemsByOrderId(order.getId()));
-            return toResponse(order);
-        }).toList();
+        return orders.stream().map(this::toResponse).toList();
     }
 
-    private void saveItems(Long orderId, List<OrderRequest.OrderItemRequest> items) {
-        for (OrderRequest.OrderItemRequest itemRequest : items) {
+    private void applyItems(Order order, List<OrderRequest.OrderItemRequest> items) {
+        List<OrderItem> mapped = items.stream().map(itemRequest -> {
             OrderItem item = new OrderItem();
-            item.setOrderId(orderId);
             item.setProductName(itemRequest.getProductName());
             item.setSku(itemRequest.getSku());
             item.setQuantity(itemRequest.getQuantity());
-            orderMapper.insertItem(item);
-        }
+            return item;
+        }).toList();
+        order.replaceItems(mapped);
     }
 
     private Order toEntity(OrderRequest request) {

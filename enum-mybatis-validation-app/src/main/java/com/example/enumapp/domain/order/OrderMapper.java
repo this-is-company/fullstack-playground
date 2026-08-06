@@ -37,4 +37,6 @@ public interface OrderMapper {
     List<Order> searchByDateBetween(OrderSearchCriteria criteria);
 
     List<Order> searchByDateTimeBetween(OrderSearchCriteria criteria);
+
+    List<Order> searchFlexible(OrderFlexibleSearchCriteria criteria);
 }

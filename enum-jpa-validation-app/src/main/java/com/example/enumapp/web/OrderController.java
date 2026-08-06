@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-@Tag(name = "Order", description = "기존 주문 API. POST 생성, PUT 수정, GET 단건. 검색은 POST /search/*.")
+@Tag(name = "Order", description = "JPA 주문 API. POST 생성, PUT 수정, GET 단건. 검색은 POST /search/*.")
 @RestController
 @RequestMapping("/api/orders")
 @Validated
@@ -56,7 +56,7 @@ public class OrderController {
         return orderService.get(id);
     }
 
-    @Operation(summary = "유연 검색", description = "날짜/between/숫자/enum/문자열 조건을 모두 optional 로 받는다. 전부 비어 있으면 전체 목록. MyBatis 동적 SQL.")
+    @Operation(summary = "유연 검색", description = "날짜/between/숫자/enum/문자열 조건을 모두 optional 로 받는다. 전부 비어 있으면 전체 목록.")
     @PostMapping("/search")
     public List<OrderResponse> searchFlexible(@RequestBody(required = false) @Valid OrderFlexibleSearchRequest request) {
         return orderService.searchFlexible(request != null ? request : new OrderFlexibleSearchRequest());
