@@ -11,6 +11,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Null;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 
 import java.util.List;
@@ -37,6 +38,18 @@ public class OrderRequest {
     @Schema(description = "회원 등급 code", example = "G")
     @NotNull(groups = {ValidationGroups.Create.class, ValidationGroups.Update.class})
     private UserGrade userGrade;
+
+    /**
+     * @Pattern 단순 패턴 검증 예시 필드.
+     * null 이면 검사하지 않음. 값이 있으면 영문/숫자/_/- 만 허용.
+     */
+    @Schema(description = "@Pattern 예시. 영문/숫자/_/- 만 허용", example = "PROMO_01", nullable = true)
+    @Pattern(
+            regexp = "^[A-Za-z0-9_-]+$",
+            message = "promoCode must match pattern [A-Za-z0-9_-]+",
+            groups = {ValidationGroups.Create.class, ValidationGroups.Update.class}
+    )
+    private String promoCode;
 
     @Schema(description = "주문 상품 목록. null/empty 및 내부 blank 필드 불가")
     @NotBlankFieldsInList(
@@ -84,6 +97,14 @@ public class OrderRequest {
 
     public void setUserGrade(UserGrade userGrade) {
         this.userGrade = userGrade;
+    }
+
+    public String getPromoCode() {
+        return promoCode;
+    }
+
+    public void setPromoCode(String promoCode) {
+        this.promoCode = promoCode;
     }
 
     public List<OrderItemRequest> getItems() {

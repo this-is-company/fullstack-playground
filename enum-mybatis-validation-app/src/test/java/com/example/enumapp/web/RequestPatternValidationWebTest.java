@@ -103,4 +103,24 @@ class RequestPatternValidationWebTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.result.errors['items[0].sku']", containsString("special characters")));
     }
+
+    @Test
+    @DisplayName("@Pattern 필드(promoCode) 형식 불일치면 400")
+    void promoCode_patternValidated() throws Exception {
+        String body = """
+                {
+                  "customerName": "Kim",
+                  "status": "P",
+                  "payMethod": "CARD",
+                  "userGrade": "B",
+                  "promoCode": "PROMO@BAD!",
+                  "items": [
+                    {"productName": "Book", "sku": "SKU-1", "quantity": 1}
+                  ]
+                }
+                """;
+        mockMvc.perform(post("/api/orders").contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.result.errors.promoCode", containsString("promoCode must match pattern")));
+    }
 }
