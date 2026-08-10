@@ -1,0 +1,15 @@
+server:
+  port: 8100
+
+spring:
+  application:
+    name: sso
+
+shop:
+  jwt:
+    secret: shop-demo-secret-change-me-32bytes!!
+    expires-in-seconds: 3600
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
