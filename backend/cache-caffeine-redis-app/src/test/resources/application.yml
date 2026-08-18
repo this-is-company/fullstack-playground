@@ -1,0 +1,2 @@
+# 이 모듈의 Spring 컨텍스트 테스트는 Redis 가 필요하므로
+# 기본 테스트는 TwoLevelCacheTest (순수 단위) 만 실행한다.

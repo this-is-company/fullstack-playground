@@ -23,7 +23,10 @@
 | `enum-jpa-querydsl-app/` | CodeEnum + JPA + QueryDSL ConditionBuilder (:8095) |
 | `enum-jpa-querydsl-kotlin-app/` | 위 QueryDSL 앱 Kotlin 버전 (:8096) |
 | `enum-sqlalchemy-python-app/` | FastAPI + SQLAlchemy ConditionBuilder (Python, :8097) |
-| `docker-compose.yml` | Nexus(8081) + PostgreSQL(5432) + Keycloak(8180) |
+| `cache-caffeine-app/` | Caffeine 전용 캐시 + MyBatis SQL 로그 (:8110) |
+| `cache-redis-app/` | Redis 전용 캐시 + MyBatis SQL 로그 (:8111) |
+| `cache-caffeine-redis-app/` | L1 Caffeine + L2 Redis + MyBatis SQL 로그 (:8112) |
+| `docker-compose.yml` | Nexus(8081) + PostgreSQL(5432) + Keycloak(8180) + Redis(6379) |
 | `scripts/` | 인프라 기동 / 배포 / 실행 |
 
 ## 단계별 실행
@@ -114,3 +117,5 @@ curl http://localhost:8093/api/demo/cache
 curl -X PUT "http://localhost:8093/api/demo/cache/orders/1?customerName=After-Put"
 curl -X DELETE http://localhost:8093/api/demo/cache/orders/1
 ```
+
+Caffeine / Redis / L1+L2 를 **앱을 나눠** 보는 샘플: [CACHE-APPS.md](CACHE-APPS.md)

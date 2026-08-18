@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.cacheapp.product.ProductMapper">
+
+    <select id="findById" resultType="com.example.cacheapp.product.Product">
+        SELECT id, name, price, stock
+        FROM cache_demo_products
+        WHERE id = #{id}
+    </select>
+
+    <select id="findAll" resultType="com.example.cacheapp.product.Product">
+        SELECT id, name, price, stock
+        FROM cache_demo_products
+        ORDER BY id
+    </select>
+
+    <update id="updateStock">
+        UPDATE cache_demo_products
+        SET stock = #{stock}
+        WHERE id = #{id}
+    </update>
+</mapper>
