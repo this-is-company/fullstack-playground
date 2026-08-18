@@ -1,0 +1,6 @@
+# PrettySqlLogger (@Profile local) 가 SQL + Params 를 출력
+decorator:
+  datasource:
+    proxy:
+      query:
+        enable-logging: false

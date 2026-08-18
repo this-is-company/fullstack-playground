@@ -1,3 +1,61 @@
+# 웹 프로젝트에 대한 생걱
+## API에 대한 응답
+
+### response의 통일
+리턴값은 항상 일치해야한다. 
+오류리턴일떄도 항상 같아야한다.
+다음과 비슷하면 좋겠지? error은 서버등의 통제할수 없는 오류, fail은 비지니스 오류이다.
+{
+    status:[success,fail,error],
+    data<T>:T,
+    errorCode:String,
+    errorMessage:String
+}
+
+컨트롤러에서 service만 리턴해도 일괄적으로 나오도록 리턴할때 컷해서 response를 만든다.
+
+### Restful 방식으로 진행한다.
+/서비스/
+
+- 시작은 "/"로 시작하며, 뒤에는 "/"을 붙이지 않는다.
+- GET, PUT, PATCH, DELETE, POST를 사용
+- 목록에 대한 조회 POST로 한다. 
+- 상세조회는 GET을 쓸수 있으며 상세조회에 대한 행동을 넣을수 있다.
+- 등록/전체수정은 PUT을, 부분 수정은 PATCH를 한다. 
+- Mapping은 통일되게 나오도록 한다.
+
+
+### paging 전략
+page를 위한 request로 받아야할것, response로 내보낼 것
+DB에서 어떻게 처리할것인가
+
+count는 어떻게 할것인가
+
+### exception 전략
+사용자는 비지니스 오류만 낼수 있다. 
+비지니스오류는 enum으로 코드화한다.
+
+### 문서화
+swagger로 한다.
+1. 성공했을때의 리턴값
+2. (비지니스오류에대한) exception일때의 리턴값
+3. 접근할수 없는 서버오류 또는 404등, 처리되기 전에 나오는 오류, validation오류도 마찬가지
+4. javadoc는 스웨거문서로 거의 대체되며, service부분에서만 나오게 한다.
+
+#### swagger에 대한 어노테이션
+1. 컨트롤러 클래스에서는 Tag를 쓰며, 일반적인 Resultful 메서드에는 @Operation을 달지 않는다.
+   - 추가적인 API 메서드에서 @Operation으로 사례를 단다.
+2. Dto에서는 스키마 어노테이션을 쓴다.
+
+
+#### 개인적인 바람
+공통적으로 나오는 오류는 dto에서 나왔으면 좋겠다.
+
+
+
+
+
+
 # DB Query Lib → Nexus → Consumer App
 
 로컬 Nexus에 DB 조회 라이브러리를 배포하고, 새 프로젝트에서 그 아티팩트를 받아 DB 조회를 검증하는 샘플입니다.
@@ -26,6 +84,12 @@
 | `cache-caffeine-app/` | Caffeine 전용 캐시 + MyBatis SQL 로그 (:8110) |
 | `cache-redis-app/` | Redis 전용 캐시 + MyBatis SQL 로그 (:8111) |
 | `cache-caffeine-redis-app/` | L1 Caffeine + L2 Redis + MyBatis SQL 로그 (:8112) |
+| `api-mybatis-app/` | MyBatis + Swagger + 공통응답 `{status,data,error}` (:8130) |
+| `api-jpa-app/` | JPA + Swagger + 공통응답 (:8131) |
+| `api-querydsl-app/` | QueryDSL + Swagger + 공통응답 (:8132) |
+| `api-mybatis-app/` | MyBatis + Swagger + 공통응답 `{status,data,error}` (:8130) |
+| `api-jpa-app/` | JPA + Swagger + 공통응답 (:8131) |
+| `api-querydsl-app/` | QueryDSL + Swagger + 공통응답 (:8132) |
 | `docker-compose.yml` | Nexus(8081) + PostgreSQL(5432) + Keycloak(8180) + Redis(6379) |
 | `scripts/` | 인프라 기동 / 배포 / 실행 |
 
@@ -119,3 +183,5 @@ curl -X DELETE http://localhost:8093/api/demo/cache/orders/1
 ```
 
 Caffeine / Redis / L1+L2 를 **앱을 나눠** 보는 샘플: [CACHE-APPS.md](CACHE-APPS.md)
+
+MyBatis / JPA / QueryDSL 조회 + 공통 응답 샘플: [API-DEMO-APPS.md](API-DEMO-APPS.md)

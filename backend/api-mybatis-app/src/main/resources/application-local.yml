@@ -1,0 +1,4 @@
+# SQL 로그는 local 만. MybatisSqlLoggingInterceptor (@Profile("local"))
+logging:
+  level:
+    com.example.demo.config.MybatisSqlLoggingInterceptor: INFO

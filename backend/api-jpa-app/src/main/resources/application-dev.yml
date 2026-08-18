@@ -1,0 +1,10 @@
+# 개발부터 SQL 로그 없음
+decorator:
+  datasource:
+    proxy:
+      query:
+        enable-logging: false
+logging:
+  level:
+    com.example.demo.config.PrettySqlLogger: OFF
+    org.hibernate.SQL: WARN

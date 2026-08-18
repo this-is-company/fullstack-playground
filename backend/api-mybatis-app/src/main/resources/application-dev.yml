@@ -1,0 +1,5 @@
+# 개발부터는 SQL 로그 없음 (interceptor 가 local 전용)
+logging:
+  level:
+    com.example.demo.config.MybatisSqlLoggingInterceptor: OFF
+    org.apache.ibatis: WARN

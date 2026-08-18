@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.demo.domain.ProductMapper">
+
+    <select id="findAll" resultType="com.example.demo.domain.Product">
+        SELECT id, name, price, stock
+        FROM demo_products
+        ORDER BY id
+    </select>
+
+    <select id="findById" resultType="com.example.demo.domain.Product">
+        SELECT id, name, price, stock
+        FROM demo_products
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO demo_products (name, price, stock)
+        VALUES (#{name}, #{price}, #{stock})
+    </insert>
+</mapper>

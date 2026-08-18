@@ -1,4 +1,4 @@
-package com.example.cacheapp.config;
+package com.example.demo.config;
 
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
@@ -15,15 +15,15 @@ import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.type.TypeHandlerRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 실제 DB SQL 이 나갈 때만 찍힌다. 캐시 hit 이면 이 로그가 없다.
- */
+/** local 프로필에서만 SQL 로그. */
 @Component
+@Profile("local")
 @Intercepts({
         @Signature(type = Executor.class, method = "query", args = {
                 MappedStatement.class, Object.class, RowBounds.class, ResultHandler.class
@@ -41,16 +41,9 @@ public class MybatisSqlLoggingInterceptor implements Interceptor {
         MappedStatement ms = (MappedStatement) invocation.getArgs()[0];
         Object param = invocation.getArgs()[1];
         BoundSql boundSql = ms.getBoundSql(param);
-        String params = formatParams(ms, boundSql, param);
         String sql = prettySql(boundSql.getSql());
-        String bound = bindParams(sql, paramsList(ms, boundSql, param));
-        log.info("""
-                [MYBATIS→DB] {}
-                  SQL:
-                {}
-                  Params: {}
-                  Bound : {}
-                """, ms.getId(), indent(sql), params, bound);
+        String runnable = bindParams(sql, paramsList(ms, boundSql, param));
+        log.info("[MYBATIS→DB] {}\n{}", ms.getId(), runnable);
         return invocation.proceed();
     }
 
@@ -79,20 +72,6 @@ public class MybatisSqlLoggingInterceptor implements Interceptor {
                 .replaceAll("(?i)\\s+ORDER BY\\s+", "\nORDER BY ");
     }
 
-    private static String indent(String sql) {
-        return sql.replaceAll("(?m)^", "    ");
-    }
-
-    private static String formatParams(MappedStatement ms, BoundSql boundSql, Object param) {
-        List<String> pairs = new ArrayList<>();
-        List<Object> values = paramsList(ms, boundSql, param);
-        List<ParameterMapping> mappings = boundSql.getParameterMappings();
-        for (int i = 0; i < mappings.size(); i++) {
-            pairs.add(mappings.get(i).getProperty() + "=" + formatValue(values.get(i)));
-        }
-        return pairs.isEmpty() ? "(none)" : String.join(", ", pairs);
-    }
-
     private static List<Object> paramsList(MappedStatement ms, BoundSql boundSql, Object param) {
         List<Object> values = new ArrayList<>();
         TypeHandlerRegistry registry = ms.getConfiguration().getTypeHandlerRegistry();
@@ -115,18 +94,17 @@ public class MybatisSqlLoggingInterceptor implements Interceptor {
     }
 
     private static String bindParams(String sql, List<Object> values) {
-        String flat = sql.replace('\n', ' ');
         StringBuilder sb = new StringBuilder();
         int from = 0;
         int idx = 0;
-        for (int i = 0; i < flat.length(); i++) {
-            if (flat.charAt(i) == '?' && idx < values.size()) {
-                sb.append(flat, from, i);
+        for (int i = 0; i < sql.length(); i++) {
+            if (sql.charAt(i) == '?' && idx < values.size()) {
+                sb.append(sql, from, i);
                 sb.append(formatValue(values.get(idx++)));
                 from = i + 1;
             }
         }
-        sb.append(flat.substring(from));
+        sb.append(sql.substring(from));
         return sb.toString();
     }
 

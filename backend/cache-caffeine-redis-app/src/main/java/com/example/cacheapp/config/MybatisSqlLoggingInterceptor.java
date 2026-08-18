@@ -134,9 +134,10 @@ public class MybatisSqlLoggingInterceptor implements Interceptor {
         if (value == null) {
             return "null";
         }
-        if (value instanceof String || value instanceof java.time.temporal.Temporal) {
-            return "'" + value + "'";
+        if (value instanceof Number || value instanceof Boolean) {
+            return String.valueOf(value);
         }
-        return String.valueOf(value);
+        String text = value instanceof Enum<?> e ? e.name() : String.valueOf(value);
+        return "'" + text.replace("'", "''") + "'";
     }
 }

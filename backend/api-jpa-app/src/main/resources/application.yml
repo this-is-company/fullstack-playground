@@ -1,0 +1,47 @@
+server:
+  port: 8131
+
+spring:
+  profiles:
+    active: local
+  datasource:
+    url: jdbc:h2:mem:apijpa;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    show-sql: false
+  h2:
+    console:
+      enabled: true
+
+decorator:
+  datasource:
+    proxy:
+      logging: slf4j
+      query:
+        enable-logging: false
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    default-model-rendering: model
+    default-model-expand-depth: 10
+    default-models-expand-depth: 10
+    doc-expansion: list
+    try-it-out-enabled: true
+    display-request-duration: true
+    filter: true
+    tags-sorter: alpha
+    operations-sorter: method
+    show-common-extensions: true
+  api-docs:
+    path: /v3/api-docs
+  writer-with-order-by-keys: true
