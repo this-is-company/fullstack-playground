@@ -15,10 +15,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 
-/** Swagger index.html 에 표 CSS/JS 를 넣는다. */
+/** Swagger UI 에 속성 한 줄 CSS 만 넣는다. */
 @Component
 @Order(Ordered.LOWEST_PRECEDENCE)
-public class SwaggerUiTableFilter extends OncePerRequestFilter {
+public class SwaggerUiCssFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -38,8 +38,7 @@ public class SwaggerUiTableFilter extends OncePerRequestFilter {
         if (html.contains("</head>") && !html.contains("swagger-custom.css")) {
             html = html.replace(
                     "</head>",
-                    "<link rel=\"stylesheet\" href=\"/swagger-custom.css\">"
-                            + "<script defer src=\"/swagger-custom.js\"></script></head>"
+                    "<link rel=\"stylesheet\" href=\"/swagger-custom.css\"></head>"
             );
         }
         byte[] bytes = html.getBytes(StandardCharsets.UTF_8);

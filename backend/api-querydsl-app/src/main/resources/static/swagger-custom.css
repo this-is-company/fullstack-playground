@@ -1,116 +1,29 @@
-/* 하단 Schemas: 항상 펼친 표 + 타입·설명 한 줄 */
-.swagger-ui section.models {
-  background: #fff;
-  border: 1px solid #d8dde6;
-  border-radius: 8px;
-  padding: 8px 12px 16px;
-}
-
-.swagger-ui section.models .model-container {
-  margin: 0 0 16px;
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.swagger-ui section.models .model-box {
-  background: #fff !important;
-  padding: 0 !important;
-}
-
-.swagger-ui section.models .model-title {
-  display: block;
-  background: #f3f4f6;
-  padding: 10px 12px;
-  font-weight: 700;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.swagger-ui section.models .brace-open,
-.swagger-ui section.models .brace-close {
-  display: none !important;
-}
-
-.swagger-ui section.models table.model {
-  display: table !important;
-  width: 100% !important;
-  border-collapse: collapse !important;
-  margin: 0 !important;
-}
-
-.swagger-ui section.models table.model thead th {
-  text-align: left;
-  background: #fafafa;
-  border-bottom: 1px solid #e5e7eb;
-  padding: 8px 12px;
-  font-size: 12px;
-  color: #6b7280;
-}
-
-.swagger-ui section.models table.model tr.property-row {
-  display: table-row !important;
-}
-
-.swagger-ui section.models table.model td,
-.swagger-ui section.models table.model th {
-  display: table-cell !important;
-  padding: 8px 12px !important;
-  border-bottom: 1px solid #f0f0f0;
-  vertical-align: middle;
-}
-
-/* 타입 옆에 설명을 같은 줄로 */
-.swagger-ui section.models .property-row > td:last-child {
-  white-space: nowrap;
-}
-
-.swagger-ui section.models .property-row > td:last-child .markdown,
-.swagger-ui section.models .property-row > td:last-child .renderedMarkdown,
-.swagger-ui section.models .property-row > td:last-child .prop {
-  display: inline !important;
-}
-
-.swagger-ui section.models .property-row > td:last-child .markdown p,
-.swagger-ui section.models .property-row > td:last-child .renderedMarkdown p,
-.swagger-ui section.models .property-row > td:last-child p {
-  display: inline !important;
-  margin: 0 0 0 1ch !important;
-  color: #6b7280;
-  font-weight: 400;
-}
-
-.swagger-ui section.models .property-row > td:last-child .markdown p::before,
-.swagger-ui section.models .property-row > td:last-child .renderedMarkdown p::before,
-.swagger-ui section.models .property-row > td:last-child p::before {
-  content: "— ";
-  color: #9ca3af;
-}
-
-/* .prop 하위(타입, format, enum, 설명)를 한 줄로 */
-.swagger-ui section.models .prop,
-.swagger-ui section.models .property-row > td:last-child {
-  display: flex !important;
-  flex-direction: row !important;
+/* 스키마 속성만 옆으로: 타입, format, 설명을 한 줄 + 칸 사이 공백 1칸 */
+.swagger-ui .prop:not(:has(.model-box)) {
+  display: inline-flex;
   flex-wrap: wrap;
   align-items: baseline;
   gap: 1ch;
-  white-space: nowrap;
 }
 
-.swagger-ui section.models .prop > * + * {
-  margin-left: 1ch;
+.swagger-ui .prop:not(:has(.model-box)) > * {
+  display: inline;
 }
 
-.swagger-ui section.models .prop > *,
-.swagger-ui section.models .prop .prop-type,
-.swagger-ui section.models .prop .prop-enum,
-.swagger-ui section.models .prop .prop-format,
-.swagger-ui section.models .prop .markdown,
-.swagger-ui section.models .prop .renderedMarkdown,
-.swagger-ui section.models .prop br {
+.swagger-ui .prop:not(:has(.model-box)) br {
+  display: none;
+}
+
+.swagger-ui .prop .markdown,
+.swagger-ui .prop .renderedMarkdown,
+.swagger-ui .prop .markdown p,
+.swagger-ui .prop .renderedMarkdown p {
   display: inline !important;
+  margin: 0 !important;
 }
 
-.swagger-ui section.models .prop br {
-  display: none !important;
+.swagger-ui .prop .markdown p::before,
+.swagger-ui .prop .renderedMarkdown p::before {
+  content: " — ";
+  color: #9ca3af;
 }

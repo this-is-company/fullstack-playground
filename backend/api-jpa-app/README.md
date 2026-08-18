@@ -8,7 +8,7 @@ JPA 조회 + Swagger + 공통 응답 `{ status, data, error }`
 | Swagger UI | **http://localhost:8131/swagger-ui.html** |
 | OpenAPI JSON | http://localhost:8131/v3/api-docs |
 
-Swagger 요청/응답은 **Schema** 탭이 기본. 맨 아래 **Schemas** 는 표 형태로 보이게 해 두었다.
+Swagger API 본문은 **Example Value(JSON)** 가 기본. 맨 아래 Schemas 는 펼쳐 둔다.
 
 ```bash
 ./gradlew bootRun

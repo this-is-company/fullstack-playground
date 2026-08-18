@@ -8,7 +8,7 @@ MyBatis 조회 + Swagger + 공통 응답 `{ status, data, error }`
 | Swagger UI | **http://localhost:8130/swagger-ui.html** |
 | OpenAPI JSON | http://localhost:8130/v3/api-docs |
 
-Swagger 요청/응답은 **Schema** 탭이 기본. 맨 아래 **Schemas** 는 표(필드 / 타입·설명)로 보이도록 CSS 를 넣었다.
+Swagger API 본문은 **Example Value(JSON)** 가 기본. 맨 아래 Schemas 는 펼쳐 둔다.
 
 ```bash
 ./gradlew bootRun
