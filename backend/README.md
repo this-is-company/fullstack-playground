@@ -18,7 +18,7 @@
 | `security-form-app/` | Spring Security + DB `app_users` 폼 로그인 (:8090) |
 | `security-sso-app/` | Keycloak OAuth2 로그인 + JWT API 검증 (Maven, :8091) |
 | `security-sso-gradle-app/` | Keycloak OAuth2 로그인 + JWT API 검증 (Gradle, :8092) |
-| `enum-mybatis-validation-app/` | CodeEnum + MyBatis TypeHandler + Validation groups (:8093) |
+| `enum-mybatis-validation-app/` | CodeEnum + MyBatis TypeHandler + Validation groups + **Spring Cache** (:8093) |
 | `enum-jpa-validation-app/` | CodeEnum + Spring Data JPA Specification (:8094) |
 | `enum-jpa-querydsl-app/` | CodeEnum + JPA + QueryDSL ConditionBuilder (:8095) |
 | `enum-jpa-querydsl-kotlin-app/` | 위 QueryDSL 앱 Kotlin 버전 (:8096) |
@@ -79,3 +79,37 @@ docker compose up -d keycloak
 - JDBC: `com.example:db-query-lib:1.0.2`
 - MyBatis: `com.example:db-query-mybatis-lib:1.0.0`
 - API paths: `com.example:api-common:1.0.0`
+
+## Spring Cache (`enum-mybatis-validation-app`)
+
+`:8093` — Controller → Service → **OrderQueryService(@Cacheable)** → OrderMapper → DB
+
+| 캐시 | 키 | 적용 API / 메서드 |
+|------|-----|-------------------|
+| `orders` | `#id` | `GET /api/orders/{id}`, `GET /api/resource/orders/{id}` → `OrderQueryService.getById` |
+| `orders-list` | `'all'` | `POST /api/orders/search` `{}`, `POST /api/resource/orders` (조건 없음) → `findAll` |
+| `orders-search` | `#criteria.cacheKey()` | `POST /api/orders/search` (조건 있음) → `searchFlexible` |
+
+쓰기 시 `OrderService`에서 `@CachePut` / `@CacheEvict` (create·update·cancel·delete).
+
+명시 예제 API (`CacheDemoController`):
+
+| 어노테이션 | API | 효과 |
+|-----------|-----|------|
+| `@Cacheable` | `GET /api/orders/{id}` | hit 이면 DB 생략 |
+| `@CachePut` | `PUT /api/demo/cache/orders/{id}?customerName=` | 항상 실행 + 반환값으로 캐시 덮어씀 |
+| `@CacheEvict` | `DELETE /api/demo/cache/orders/{id}` | 해당 키만 삭제 (DB 행은 유지) |
+
+의존성: `spring-boot-starter-cache` + `caffeine` (`build.gradle.kts`), 설정은 `CacheConfig`.
+
+확인:
+- 로그: `[CACHE→DB]`, `[MYBATIS→DB]` — 캐시 hit 시 둘 다 없음
+- `GET /api/demo/cache` — 캐시 통계·흐름 설명
+
+```bash
+cd enum-mybatis-validation-app && ./gradlew bootRun
+# 같은 id로 GET 두 번 → 두 번째는 DB 로그 없음
+curl http://localhost:8093/api/demo/cache
+curl -X PUT "http://localhost:8093/api/demo/cache/orders/1?customerName=After-Put"
+curl -X DELETE http://localhost:8093/api/demo/cache/orders/1
+```

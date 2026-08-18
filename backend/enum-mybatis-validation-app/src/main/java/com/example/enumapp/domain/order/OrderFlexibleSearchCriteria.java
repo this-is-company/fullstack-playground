@@ -66,6 +66,23 @@ public class OrderFlexibleSearchCriteria {
                 && createdTo == null;
     }
 
+    /** {@code @Cacheable} SpEL 키 — 필드 조합 문자열 */
+    public String cacheKey() {
+        return String.join("|",
+                nullToEmpty(customerName),
+                status == null ? "" : status.getCode(),
+                payMethod == null ? "" : payMethod.getCode(),
+                minQuantity == null ? "" : minQuantity.toString(),
+                createdFrom == null ? "" : createdFrom.toString(),
+                createdTo == null ? "" : createdTo.toString(),
+                Boolean.toString(createdToInclusive)
+        );
+    }
+
+    private static String nullToEmpty(String value) {
+        return value == null ? "" : value;
+    }
+
     public static final class Builder {
         private String customerName;
         private OrderStatus status;

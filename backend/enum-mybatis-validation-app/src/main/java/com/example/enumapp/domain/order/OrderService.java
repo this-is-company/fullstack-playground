@@ -7,6 +7,9 @@ import com.example.enumapp.web.dto.OrderDateSearchRequest;
 import com.example.enumapp.web.dto.OrderFlexibleSearchRequest;
 import com.example.enumapp.web.dto.OrderRequest;
 import com.example.enumapp.web.dto.OrderResponse;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,29 +20,52 @@ import java.util.List;
 public class OrderService {
 
     private final OrderMapper orderMapper;
+    private final OrderQueryService orderQueryService;
 
-    public OrderService(OrderMapper orderMapper) {
+    public OrderService(OrderMapper orderMapper, OrderQueryService orderQueryService) {
         this.orderMapper = orderMapper;
+        this.orderQueryService = orderQueryService;
     }
 
     @Transactional
+    @Caching(
+            put = @CachePut(value = "orders", key = "#result.id"),
+            evict = {
+                    @CacheEvict(value = "orders-list", allEntries = true),
+                    @CacheEvict(value = "orders-search", allEntries = true)
+            }
+    )
     public OrderResponse create(OrderRequest request) {
         Order order = toEntity(request);
         orderMapper.insertOrder(order);
         saveItems(order.getId(), request.getItems());
-        return get(order.getId());
+        return orderQueryService.fetchFromDb(order.getId());
     }
 
     @Transactional
+    @Caching(
+            put = @CachePut(value = "orders", key = "#result.id"),
+            evict = {
+                    @CacheEvict(value = "orders-list", allEntries = true),
+                    @CacheEvict(value = "orders-search", allEntries = true)
+            }
+    )
     public OrderResponse createWithCreatedAt(OrderRequest request, LocalDateTime createdAt) {
         Order order = toEntity(request);
         order.setCreatedAt(createdAt);
         orderMapper.insertOrder(order);
         saveItems(order.getId(), request.getItems());
-        return get(order.getId());
+        return orderQueryService.fetchFromDb(order.getId());
     }
 
     @Transactional
+    @Caching(
+            put = @CachePut(value = "orders", key = "#result.id"),
+            evict = {
+                    @CacheEvict(value = "orders-list", allEntries = true),
+                    @CacheEvict(value = "orders-search", allEntries = true)
+            }
+    )
     public OrderResponse update(OrderRequest request) {
         Order existing = orderMapper.findById(request.getId());
         if (existing == null) {
@@ -55,21 +81,45 @@ public class OrderService {
         orderMapper.updateOrder(order);
         orderMapper.deleteItemsByOrderId(order.getId());
         saveItems(order.getId(), request.getItems());
-        return get(order.getId());
+        return orderQueryService.fetchFromDb(order.getId());
     }
 
     @Transactional(readOnly = true)
     public OrderResponse get(Long id) {
-        Order order = orderMapper.findById(id);
-        if (order == null) {
+        return orderQueryService.getById(id);
+    }
+
+    /**
+     * {@code @CachePut} 예제: 메서드는 항상 실행되고, 반환값으로 {@code orders} 캐시를 덮어쓴다.
+     * 다음 GET 은 DB 없이 이 값을 쓴다.
+     */
+    @Transactional
+    @CachePut(value = "orders", key = "#id")
+    public OrderResponse cachePutRename(Long id, String customerName) {
+        Order existing = orderMapper.findById(id);
+        if (existing == null) {
             throw BusinessException.notFound(ApiMessageCodes.ORDER_NOT_FOUND, "order not found: " + id);
         }
-        List<OrderItem> items = orderMapper.findItemsByOrderId(id);
-        order.setItems(items);
-        return toResponse(order);
+        existing.setCustomerName(customerName);
+        orderMapper.updateOrder(existing);
+        return orderQueryService.fetchFromDb(id);
+    }
+
+    /**
+     * {@code @CacheEvict} 예제: {@code orders} 키만 지운다. DB 행은 그대로 둔다.
+     * 다음 GET 은 캐시 miss → 다시 DB.
+     */
+    @CacheEvict(value = "orders", key = "#id")
+    public void cacheEvictById(Long id) {
+        // 캐시만 삭제. 조회는 하지 않아도 된다.
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "orders", key = "#id"),
+            @CacheEvict(value = "orders-list", allEntries = true),
+            @CacheEvict(value = "orders-search", allEntries = true)
+    })
     public void delete(Long id) {
         Order existing = orderMapper.findById(id);
         if (existing == null) {
@@ -80,6 +130,13 @@ public class OrderService {
     }
 
     @Transactional
+    @Caching(
+            put = @CachePut(value = "orders", key = "#result.id"),
+            evict = {
+                    @CacheEvict(value = "orders-list", allEntries = true),
+                    @CacheEvict(value = "orders-search", allEntries = true)
+            }
+    )
     public OrderResponse cancel(Long id) {
         Order existing = orderMapper.findById(id);
         if (existing == null) {
@@ -89,7 +146,7 @@ public class OrderService {
             throw BusinessException.badRequest(ApiMessageCodes.BAD_REQUEST, "order already cancelled: " + id);
         }
         orderMapper.updateStatus(id, OrderStatus.CANCELLED);
-        return get(id);
+        return orderQueryService.fetchFromDb(id);
     }
 
     @Transactional(readOnly = true)
@@ -105,10 +162,14 @@ public class OrderService {
                 && request.getToDateTime() != null && !request.getToDateTime().isBlank()) {
             return searchByDateTimeBetween(request);
         }
-        return mapList(orderMapper.findAll());
+        return orderQueryService.findAll();
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "orders-list", allEntries = true),
+            @CacheEvict(value = "orders-search", allEntries = true)
+    })
     public List<OrderResponse> updateStatusMany(List<Long> ids, OrderStatus status) {
         if (status == null) {
             throw BusinessException.badRequest(ApiMessageCodes.BAD_REQUEST, "status is required for bulk update");
@@ -120,10 +181,15 @@ public class OrderService {
             }
             orderMapper.updateStatus(id, status);
         }
-        return mapList(orderMapper.findByIds(ids));
+        return orderQueryService.fetchByIdsFromDb(ids);
     }
 
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "orders", allEntries = true),
+            @CacheEvict(value = "orders-list", allEntries = true),
+            @CacheEvict(value = "orders-search", allEntries = true)
+    })
     public void deleteMany(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
             return;
@@ -163,18 +229,17 @@ public class OrderService {
 
     /**
      * 유연 검색: Criteria Builder → MyBatis 동적 SQL (&lt;if&gt;).
-     * 모든 조건이 비어 있으면 전체 목록.
+     * 모든 조건이 비어 있으면 전체 목록(캐시 orders-list).
      */
     @Transactional(readOnly = true)
     public List<OrderResponse> searchFlexible(OrderFlexibleSearchRequest request) {
         OrderFlexibleSearchCriteria criteria = OrderFlexibleSearchCriteriaBuilder.from(request);
-        return mapList(orderMapper.searchFlexible(criteria));
+        if (criteria.isEmpty()) {
+            return orderQueryService.findAll();
+        }
+        return orderQueryService.searchFlexible(criteria);
     }
 
-    /**
-     * 문자열 날짜 → LocalDate/LocalDateTime 변환.
-     * minQuantity 는 Integer 그대로 유지 (null 이면 null, 0 으로 바꾸지 않음).
-     */
     public OrderSearchCriteria toCriteria(OrderDateSearchRequest request) {
         OrderSearchCriteria criteria = new OrderSearchCriteria();
         criteria.setOrderDate(DateStrings.toLocalDate(request.getOrderDate()));
@@ -191,6 +256,25 @@ public class OrderService {
             order.setItems(orderMapper.findItemsByOrderId(order.getId()));
             return toResponse(order);
         }).toList();
+    }
+
+    private OrderResponse toResponse(Order order) {
+        OrderResponse response = new OrderResponse();
+        response.setId(order.getId());
+        response.setCustomerName(order.getCustomerName());
+        response.setStatus(order.getStatus());
+        response.setPayMethod(order.getPayMethod());
+        response.setUserGrade(order.getUserGrade());
+        response.setCreatedAt(order.getCreatedAt());
+        response.setItems(order.getItems().stream().map(item -> {
+            OrderResponse.OrderItemResponse r = new OrderResponse.OrderItemResponse();
+            r.setId(item.getId());
+            r.setProductName(item.getProductName());
+            r.setSku(item.getSku());
+            r.setQuantity(item.getQuantity());
+            return r;
+        }).toList());
+        return response;
     }
 
     private void saveItems(Long orderId, List<OrderRequest.OrderItemRequest> items) {
@@ -212,24 +296,5 @@ public class OrderService {
         order.setPayMethod(request.getPayMethod());
         order.setUserGrade(request.getUserGrade());
         return order;
-    }
-
-    private OrderResponse toResponse(Order order) {
-        OrderResponse response = new OrderResponse();
-        response.setId(order.getId());
-        response.setCustomerName(order.getCustomerName());
-        response.setStatus(order.getStatus());
-        response.setPayMethod(order.getPayMethod());
-        response.setUserGrade(order.getUserGrade());
-        response.setCreatedAt(order.getCreatedAt());
-        response.setItems(order.getItems().stream().map(item -> {
-            OrderResponse.OrderItemResponse r = new OrderResponse.OrderItemResponse();
-            r.setId(item.getId());
-            r.setProductName(item.getProductName());
-            r.setSku(item.getSku());
-            r.setQuantity(item.getQuantity());
-            return r;
-        }).toList());
-        return response;
     }
 }

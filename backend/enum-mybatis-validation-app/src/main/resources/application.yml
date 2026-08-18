@@ -14,6 +14,8 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 12MB
+  cache:
+    type: caffeine
 
 mybatis:
   mapper-locations: classpath:mapper/*.xml
@@ -31,3 +33,5 @@ springdoc:
 logging:
   level:
     com.example.enumapp: INFO
+    com.example.enumapp.domain.order.OrderQueryService: INFO
+    com.example.enumapp.config.MybatisSqlLoggingInterceptor: INFO

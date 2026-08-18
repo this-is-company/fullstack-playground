@@ -52,11 +52,12 @@ public class OrderController {
     }
 
     @GetMapping("/{id}")
+    @Operation(summary = "단건 조회 (캐시)", description = "OrderQueryService @Cacheable(orders, #id). 두 번째 호출부터 DB/MyBatis 로그 없음.")
     public OrderResponse get(@PathVariable Long id) {
         return orderService.get(id);
     }
 
-    @Operation(summary = "유연 검색", description = "날짜/between/숫자/enum/문자열 조건을 모두 optional 로 받는다. 전부 비어 있으면 전체 목록. MyBatis 동적 SQL.")
+    @Operation(summary = "유연 검색 (캐시)", description = "조건 없으면 orders-list, 있으면 orders-search 캐시. MyBatis 동적 SQL.")
     @PostMapping("/search")
     public List<OrderResponse> searchFlexible(@RequestBody(required = false) @Valid OrderFlexibleSearchRequest request) {
         return orderService.searchFlexible(request != null ? request : new OrderFlexibleSearchRequest());
