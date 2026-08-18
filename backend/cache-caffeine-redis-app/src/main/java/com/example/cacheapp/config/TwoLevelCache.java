@@ -37,12 +37,12 @@ public class TwoLevelCache implements Cache {
     public ValueWrapper get(Object key) {
         ValueWrapper hit = l1.get(key);
         if (hit != null) {
-            log.info("[CACHE HIT L1-Caffeine] name={} key={}", name, key);
+            log.info("[CACHE HIT L1-Caffeine] name={} key={} value={}", name, key, hit.get());
             return hit;
         }
         hit = l2.get(key);
         if (hit != null) {
-            log.info("[CACHE HIT L2-Redis] name={} key={} → L1 채움", name, key);
+            log.info("[CACHE HIT L2-Redis] name={} key={} value={} → L1 채움", name, key, hit.get());
             l1.put(key, hit.get());
             return hit;
         }

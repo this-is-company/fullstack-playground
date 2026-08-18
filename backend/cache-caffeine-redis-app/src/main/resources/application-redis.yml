@@ -1,0 +1,4 @@
+# Redis만. localhost:6379 필요.
+app:
+  cache:
+    mode: redis

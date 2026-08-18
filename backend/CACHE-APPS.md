@@ -13,7 +13,7 @@
 |----|------|--------|------------|
 | [cache-caffeine-app](cache-caffeine-app/) | 8110 | Caffeine만 | 아니오 |
 | [cache-redis-app](cache-redis-app/) | 8111 | Redis만 | 예 |
-| [cache-caffeine-redis-app](cache-caffeine-redis-app/) | 8112 | L1 Caffeine + L2 Redis | 예 |
+| [cache-caffeine-redis-app](cache-caffeine-redis-app/) | 8112 | 기본 L1+L2. 프로필로 Caffeine만 / Redis만 | both·redis 는 Redis 필요 |
 
 공통 API:
 
@@ -31,6 +31,9 @@ cd cache-caffeine-app && ./gradlew bootRun
 docker compose up -d redis
 cd cache-redis-app && ./gradlew bootRun
 cd cache-caffeine-redis-app && ./gradlew bootRun
+# 같은 앱에서 하나만:
+./gradlew bootRun --args='--spring.profiles.active=caffeine'
+./gradlew bootRun --args='--spring.profiles.active=redis'
 ```
 
 L1+L2 확인 순서: GET → GET(L1) → L1 evict → GET(L2, SQL 없음) → 양쪽 evict → GET(SQL).

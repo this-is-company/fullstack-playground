@@ -5,6 +5,7 @@ import com.example.cacheapp.config.TwoLevelCacheManager;
 import com.example.cacheapp.product.ProductService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.CacheManager;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,16 +24,27 @@ public class CacheDemoController {
 
     private final CacheManager cacheManager;
     private final ProductService productService;
+    private final String cacheMode;
 
-    public CacheDemoController(CacheManager cacheManager, ProductService productService) {
+    public CacheDemoController(
+            CacheManager cacheManager,
+            ProductService productService,
+            @Value("${app.cache.mode:both}") String cacheMode
+    ) {
         this.cacheManager = cacheManager;
         this.productService = productService;
+        this.cacheMode = cacheMode;
     }
 
     @GetMapping
     public Map<String, Object> info() {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("store", "caffeine(L1) + redis(L2)");
+        body.put("mode", cacheMode);
+        body.put("store", switch (cacheMode) {
+            case "caffeine" -> "Caffeine only";
+            case "redis" -> "Redis only";
+            default -> "caffeine(L1) + redis(L2)";
+        });
         body.put("cacheManager", cacheManager.getClass().getSimpleName());
         body.put("howToTell", List.of(
                 "[CACHE MISS L1+L2] + [MYBATIS→DB] → DB",

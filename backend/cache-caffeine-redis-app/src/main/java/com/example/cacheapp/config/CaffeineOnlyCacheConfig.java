@@ -3,6 +3,7 @@ package com.example.cacheapp.config;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
@@ -11,9 +12,10 @@ import org.springframework.context.annotation.Configuration;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
-public class CaffeineCacheConfig {
+@ConditionalOnProperty(name = "app.cache.mode", havingValue = "caffeine")
+public class CaffeineOnlyCacheConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(CaffeineCacheConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(CaffeineOnlyCacheConfig.class);
 
     @Bean
     CacheManager cacheManager() {
@@ -22,7 +24,7 @@ public class CaffeineCacheConfig {
                 .maximumSize(500)
                 .expireAfterWrite(10, TimeUnit.MINUTES)
                 .recordStats());
-        log.info("CacheManager = Caffeine (HIT/MISS 는 LoggingCache 로그)");
+        log.info("CacheManager = Caffeine only (app.cache.mode=caffeine)");
         return new LoggingCacheManager(manager, "Caffeine");
     }
 }

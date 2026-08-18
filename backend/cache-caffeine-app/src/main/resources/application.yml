@@ -21,6 +21,7 @@ mybatis:
   mapper-locations: classpath:mapper/*.xml
   configuration:
     map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
 
 springdoc:
   swagger-ui:
@@ -29,3 +30,5 @@ springdoc:
 logging:
   level:
     com.example.cacheapp: INFO
+    com.example.cacheapp.product.ProductMapper: DEBUG
+    com.example.cacheapp.config.MybatisSqlLoggingInterceptor: INFO

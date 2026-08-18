@@ -1,0 +1,10 @@
+# Caffeine만. Redis 서버 불필요.
+app:
+  cache:
+    mode: caffeine
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration

@@ -4,6 +4,9 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
@@ -21,7 +24,10 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Configuration
+@ConditionalOnProperty(name = "app.cache.mode", havingValue = "both", matchIfMissing = true)
 public class TwoLevelCacheConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(TwoLevelCacheConfig.class);
 
     private static final Set<String> NAMES = Set.of("products", "products-list");
 
@@ -59,6 +65,7 @@ public class TwoLevelCacheConfig {
     @Bean
     @Primary
     CacheManager cacheManager(CacheManager caffeineL1, CacheManager redisL2) {
+        log.info("CacheManager = L1 Caffeine + L2 Redis (HIT/MISS 는 TwoLevelCache 로그)");
         return new TwoLevelCacheManager(caffeineL1, redisL2);
     }
 }

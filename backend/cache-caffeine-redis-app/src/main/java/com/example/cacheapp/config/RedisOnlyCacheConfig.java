@@ -20,10 +20,10 @@ import java.time.Duration;
 import java.util.Set;
 
 @Configuration
-@ConditionalOnProperty(name = "spring.cache.type", havingValue = "redis", matchIfMissing = true)
-public class RedisCacheConfig {
+@ConditionalOnProperty(name = "app.cache.mode", havingValue = "redis")
+public class RedisOnlyCacheConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(RedisCacheConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(RedisOnlyCacheConfig.class);
 
     @Bean
     CacheManager cacheManager(RedisConnectionFactory connectionFactory, ObjectMapper objectMapper) {
@@ -43,7 +43,7 @@ public class RedisCacheConfig {
                 .cacheDefaults(defaults)
                 .initialCacheNames(Set.of("products", "products-list"))
                 .build();
-        log.info("CacheManager = Redis (HIT/MISS 는 LoggingCache 로그)");
+        log.info("CacheManager = Redis only (app.cache.mode=redis)");
         return new LoggingCacheManager(manager, "Redis");
     }
 }
