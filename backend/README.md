@@ -100,7 +100,8 @@ docker compose up -d keycloak
 | `@CachePut` | `PUT /api/demo/cache/orders/{id}?customerName=` | 항상 실행 + 반환값으로 캐시 덮어씀 |
 | `@CacheEvict` | `DELETE /api/demo/cache/orders/{id}` | 해당 키만 삭제 (DB 행은 유지) |
 
-의존성: `spring-boot-starter-cache` + `caffeine` (`build.gradle.kts`), 설정은 `CacheConfig`.
+의존성: `spring-boot-starter-cache` + `caffeine` + `starter-data-redis`.  
+기본은 Caffeine, Redis 로 바꾸려면 `redis` 프로필. 상세: [enum-mybatis-validation-app/CACHE.md](enum-mybatis-validation-app/CACHE.md)
 
 확인:
 - 로그: `[CACHE→DB]`, `[MYBATIS→DB]` — 캐시 hit 시 둘 다 없음

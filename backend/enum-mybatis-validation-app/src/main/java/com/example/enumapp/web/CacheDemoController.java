@@ -47,6 +47,7 @@ public class CacheDemoController {
     @GetMapping
     public Map<String, Object> info() {
         Map<String, Object> body = new LinkedHashMap<>();
+        body.put("cacheManager", cacheManager.getClass().getSimpleName());
         body.put("flow", List.of(
                 "OrderController / OrderResourceController",
                 "OrderService",
@@ -116,6 +117,11 @@ public class CacheDemoController {
                         "hitCount", s.hitCount(),
                         "missCount", s.missCount(),
                         "size", caffeineCache.getNativeCache().estimatedSize()
+                ));
+            } else if (cache != null) {
+                stats.put(name, Map.of(
+                        "store", cache.getClass().getSimpleName(),
+                        "note", "Redis 등 — hitCount 는 Caffeine 전용. redis-cli KEYS * 로 확인"
                 ));
             }
         }

@@ -52,5 +52,11 @@ services:
       retries: 30
       start_period: 40s
 
+  redis:
+    image: redis:7-alpine
+    container_name: enum-demo-redis
+    ports:
+      - "6379:6379"
+
 volumes:
   nexus-data:

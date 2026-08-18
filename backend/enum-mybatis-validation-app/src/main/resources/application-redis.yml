@@ -1,0 +1,10 @@
+# Caffeine 기본 설정의 Redis exclude 를 덮어쓴다. Redis 가 떠 있어야 한다.
+spring:
+  cache:
+    type: redis
+  autoconfigure:
+    exclude: []
+  data:
+    redis:
+      host: localhost
+      port: 6379
