@@ -17,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 @Configuration
 public class OpenApiConfig {
@@ -33,6 +34,7 @@ public class OpenApiConfig {
     OpenApiCustomizer schemaDocs() {
         return openApi -> {
             annotateSchemaUsage(openApi);
+            addSchemaJumpLinks(openApi);
             sortSchemas(openApi);
         };
     }
@@ -145,6 +147,68 @@ public class OpenApiConfig {
 
     private static String refName(String ref) {
         return ref.substring(ref.lastIndexOf('/') + 1);
+    }
+
+    /** API Request/Response 설명에 하단 Schemas 로 가는 링크를 단다. */
+    static void addSchemaJumpLinks(OpenAPI openApi) {
+        if (openApi.getPaths() == null) {
+            return;
+        }
+        openApi.getPaths().values().forEach(item ->
+                item.readOperations().forEach(OpenApiConfig::addLinksToOperation));
+    }
+
+    private static void addLinksToOperation(Operation operation) {
+        RequestBody body = operation.getRequestBody();
+        if (body != null && body.getContent() != null) {
+            body.getContent().values().forEach(media -> {
+                String name = topRefName(media.getSchema());
+                if (name != null) {
+                    appendDesc(body::getDescription, body::setDescription,
+                            "Request 스키마: " + schemaMarkdownLink(name));
+                }
+            });
+        }
+        if (operation.getResponses() == null) {
+            return;
+        }
+        operation.getResponses().forEach((code, response) -> {
+            if (response.getContent() == null) {
+                return;
+            }
+            response.getContent().values().forEach(media -> {
+                String name = topRefName(media.getSchema());
+                if (name != null) {
+                    appendDesc(response::getDescription, response::setDescription,
+                            "Response 스키마: " + schemaMarkdownLink(name));
+                }
+            });
+        });
+    }
+
+    private static String topRefName(Schema<?> schema) {
+        if (schema == null) {
+            return null;
+        }
+        if (schema.get$ref() != null) {
+            return refName(schema.get$ref());
+        }
+        if (schema.getItems() != null && schema.getItems().get$ref() != null) {
+            return refName(schema.getItems().get$ref());
+        }
+        return null;
+    }
+
+    private static String schemaMarkdownLink(String name) {
+        return "[" + name + "](#model-" + name.replace(" ", "-") + ")";
+    }
+
+    private static void appendDesc(Supplier<String> get, Consumer<String> set, String line) {
+        String current = get.get();
+        if (current != null && current.contains(line)) {
+            return;
+        }
+        set.accept(current == null || current.isBlank() ? line : current + "\n\n" + line);
     }
 
     static void sortSchemas(OpenAPI openApi) {

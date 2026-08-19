@@ -36,6 +36,7 @@ springdoc:
     tags-sorter: alpha
     operations-sorter: method
     show-common-extensions: true
+    deep-linking: true
   api-docs:
     path: /v3/api-docs
   writer-with-order-by-keys: false
