@@ -1,10 +1,11 @@
 import { Button, Form, Input, Select } from "antd";
 import { AgGridReact } from "ag-grid-react";
+import { useRef } from "react";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-import {CellValueChangedEvent, ValueFormatterParams} from "ag-grid-community";
-import {WorkOrderSelectEditor} from "../components/WorkOrderSelectEditor.tsx";
+import { ValueFormatterParams } from "ag-grid-community";
+import { WorkOrderSelectEditor } from "../components/WorkOrderSelectEditor.tsx";
 
 export interface WorkOrder {
   workNumber: string;
@@ -23,7 +24,10 @@ const workOrders: WorkOrder[] = [
   { workNumber: "WO-2026-00008", factoryCode: "fac2", factoryName: "공장2" },
 ];
 
+const originals = workOrders.map((row) => ({ ...row }));
+
 export function WorkOrderPage() {
+  const gridRef = useRef<AgGridReact<WorkOrder>>(null);
 
   const factoryOptions = [
     { label: "공장1", value: "fac1" },
@@ -39,9 +43,29 @@ export function WorkOrderPage() {
           <Select options={factoryOptions} />
         </Form.Item>
         <Button type="primary">조회</Button>
+        <Button
+          onClick={() => {
+            const changed: { workNumber: string; from: string; to: string }[] = [];
+            gridRef.current?.api.forEachNode((node) => {
+              const row = node.data;
+              if (!row) return;
+              const original = originals.find((item) => item.workNumber === row.workNumber);
+              if (!original || original.factoryCode === row.factoryCode) return;
+              changed.push({
+                workNumber: row.workNumber,
+                from: original.factoryCode,
+                to: row.factoryCode,
+              });
+            });
+            console.log("수정된 작업지시", changed);
+          }}
+        >
+          저장
+        </Button>
       </Form>
       <section className="ag-theme-alpine grid-surface">
         <AgGridReact<WorkOrder>
+          ref={gridRef}
           rowData={workOrders}
           columnDefs={[
             { field: "workNumber", headerName: "작업지시번호" },
