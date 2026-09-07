@@ -1,11 +1,47 @@
-import { InquiryScreen } from "./InquiryScreen";
+import { Button, Form, Input, Select } from "antd";
+import { AgGridReact } from "ag-grid-react";
+
+import "ag-grid-community/styles/ag-grid.css";
+import "ag-grid-community/styles/ag-theme-alpine.css";
+
+interface WorkOrder {
+  workNumber: string;
+  factoryCode: string;
+  factoryName: string;
+}
+
+const workOrders: WorkOrder[] = [
+  { workNumber: "WO-2026-00001", factoryCode: "fac1", factoryName: "공장1" },
+  { workNumber: "WO-2026-00002", factoryCode: "fac1", factoryName: "공장1" },
+  { workNumber: "WO-2026-00003", factoryCode: "fac2", factoryName: "공장2" },
+  { workNumber: "WO-2026-00004", factoryCode: "fac2", factoryName: "공장2" },
+  { workNumber: "WO-2026-00005", factoryCode: "fac1", factoryName: "공장1" },
+  { workNumber: "WO-2026-00006", factoryCode: "fac2", factoryName: "공장2" },
+  { workNumber: "WO-2026-00007", factoryCode: "fac1", factoryName: "공장1" },
+  { workNumber: "WO-2026-00008", factoryCode: "fac2", factoryName: "공장2" },
+];
 
 export function WorkOrderPage() {
   return (
-    <InquiryScreen
-      productGroupEditor="select"
-      hint="체크한 행만 저장합니다. 셀을 누르면 Select 에디터가 열리고, 고른 값이 바로 반영됩니다."
-      excelName="작업지시_조회"
-    />
+    <>
+      <Form>
+        <Form.Item name="workNumber" label="작업지시번호">
+          <Input />
+        </Form.Item>
+        <Form.Item name="factory" label="공장">
+          <Select options={[{ label: "공장1", value: "fac1" }, { label: "공장2", value: "fac2" }]} />
+        </Form.Item>
+        <Button type="primary">조회</Button>
+      </Form>
+      <section className="ag-theme-alpine grid-surface">
+        <AgGridReact<WorkOrder>
+          rowData={workOrders}
+          columnDefs={[
+            { field: "workNumber", headerName: "작업지시번호" },
+            { field: "factoryName", headerName: "공장" },
+          ]}
+        />
+      </section>
+    </>
   );
 }
