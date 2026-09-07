@@ -34,6 +34,8 @@ interface Props {
   onSave: (selected: InquiryRow[]) => void;
   onExcelDownload: () => void;
   excelLoading?: boolean;
+  productGroupEditor?: "popup" | "select";
+  hint?: string;
 }
 
 function money(value: number) {
@@ -63,6 +65,8 @@ export function InquiryGrid({
   onSave,
   onExcelDownload,
   excelLoading,
+  productGroupEditor = "popup",
+  hint = "체크한 행만 저장합니다.",
 }: Props) {
   const gridRef = useRef<AgGridReact<InquiryRow>>(null);
   const [lookupRow, setLookupRow] = useState<InquiryRow | null>(null);
@@ -87,22 +91,23 @@ export function InquiryGrid({
   };
 
   const columnDefs = useMemo<ColDef<InquiryRow>[]>(() => {
+    const usePopup = productGroupEditor === "popup";
     const dimensionCols: ColDef<InquiryRow>[] = FIELD_META.map((meta) => {
-      const isProductGroup = meta.key === "productGroup";
+      const isProductGroupPopup = usePopup && meta.key === "productGroup";
       return {
         field: meta.key,
-        headerName: isProductGroup ? "제품군(팝업)" : meta.label,
-        width: isProductGroup ? 160 : 140,
+        headerName: isProductGroupPopup ? "제품군(팝업)" : meta.label,
+        width: isProductGroupPopup ? 160 : 140,
         minWidth: 120,
         editable: (params) => {
-          if (isProductGroup) return false;
+          if (isProductGroupPopup) return false;
           const parent = parentFieldOf(meta.key);
           if (!parent) return true;
           return Boolean(params.data?.[parent]);
         },
-        cellEditor: isProductGroup ? undefined : SelectCellEditor,
-        cellEditorPopup: !isProductGroup,
-        cellRenderer: isProductGroup ? ProductGroupCell : undefined,
+        cellEditor: isProductGroupPopup ? undefined : SelectCellEditor,
+        cellEditorPopup: !isProductGroupPopup,
+        cellRenderer: isProductGroupPopup ? ProductGroupCell : undefined,
         valueSetter: (params) => {
           const field = params.colDef.field as FieldKey;
           if (!params.data || params.oldValue === params.newValue) return false;
@@ -153,7 +158,7 @@ export function InquiryGrid({
       },
       { field: "orderDate", headerName: "주문일", width: 120, editable: false },
     ];
-  }, []);
+  }, [productGroupEditor]);
 
   const defaultColDef = useMemo<ColDef<InquiryRow>>(
     () => ({
@@ -200,7 +205,7 @@ export function InquiryGrid({
           <span className="grid-toolbar-split" aria-hidden>
             |
           </span>
-          <span className="grid-toolbar-hint">체크한 행만 저장합니다. 제품군은 셀을 눌러 API 팝업에서 조회한 뒤 고릅니다.</span>
+          <span className="grid-toolbar-hint">{hint}</span>
         </div>
         <div className="grid-toolbar-actions">
           <Button
@@ -237,6 +242,7 @@ export function InquiryGrid({
             suppressPaginationPanel
             onCellValueChanged={onCellValueChanged}
             onCellClicked={(event: CellClickedEvent<InquiryRow>) => {
+              if (productGroupEditor !== "popup") return;
               if (event.colDef.field !== "productGroup" || !event.data?.line) return;
               setLookupRow(event.data);
             }}
@@ -251,7 +257,7 @@ export function InquiryGrid({
         </div>
       </Spin>
       <ProductGroupLookupModal
-        open={Boolean(lookupRow)}
+        open={productGroupEditor === "popup" && Boolean(lookupRow)}
         mode="single"
         query={{
           corp: lookupRow?.corp,
