@@ -3,7 +3,7 @@ import { AgGridReact } from "ag-grid-react";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
-import {ValueFormatterParams} from "ag-grid-community";
+import {CellValueChangedEvent, ValueFormatterParams} from "ag-grid-community";
 import {WorkOrderSelectEditor} from "../components/WorkOrderSelectEditor.tsx";
 
 export interface WorkOrder {
@@ -24,6 +24,11 @@ const workOrders: WorkOrder[] = [
 ];
 
 export function WorkOrderPage() {
+
+  const factoryOptions = [
+    { label: "공장1", value: "fac1" },
+    { label: "공장2", value: "fac2" },
+  ];
   return (
     <>
       <Form>
@@ -31,7 +36,7 @@ export function WorkOrderPage() {
           <Input />
         </Form.Item>
         <Form.Item name="factory" label="공장">
-          <Select options={[{ label: "공장1", value: "fac1" }, { label: "공장2", value: "fac2" }]} />
+          <Select options={factoryOptions} />
         </Form.Item>
         <Button type="primary">조회</Button>
       </Form>
@@ -41,14 +46,12 @@ export function WorkOrderPage() {
           columnDefs={[
             { field: "workNumber", headerName: "작업지시번호" },
             { field: "factoryCode", headerName: "공장",
-              valueFormatter: (params:ValueFormatterParams<WorkOrder>) => params.data?params.data.factoryName:"",
+              valueFormatter: (params: ValueFormatterParams<WorkOrder>) =>
+                factoryOptions.find((item) => item.value === params.value)?.label ?? "",
               editable:true,
               cellEditor:WorkOrderSelectEditor,
               cellEditorParams: {
-                options: [
-                  { label: "공장1", value: "fac1" },
-                  { label: "공장2", value: "fac2" },
-                ],
+                options: factoryOptions,
               },
             },
           ]}
