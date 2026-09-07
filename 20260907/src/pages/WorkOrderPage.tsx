@@ -3,8 +3,10 @@ import { AgGridReact } from "ag-grid-react";
 
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-alpine.css";
+import {ValueFormatterParams} from "ag-grid-community";
+import {WorkOrderSelectEditor} from "../components/WorkOrderSelectEditor.tsx";
 
-interface WorkOrder {
+export interface WorkOrder {
   workNumber: string;
   factoryCode: string;
   factoryName: string;
@@ -38,7 +40,17 @@ export function WorkOrderPage() {
           rowData={workOrders}
           columnDefs={[
             { field: "workNumber", headerName: "작업지시번호" },
-            { field: "factoryName", headerName: "공장" },
+            { field: "factoryCode", headerName: "공장",
+              valueFormatter: (params:ValueFormatterParams<WorkOrder>) => params.data?params.data.factoryName:"",
+              editable:true,
+              cellEditor:WorkOrderSelectEditor,
+              cellEditorParams: {
+                options: [
+                  { label: "공장1", value: "fac1" },
+                  { label: "공장2", value: "fac2" },
+                ],
+              },
+            },
           ]}
         />
       </section>
