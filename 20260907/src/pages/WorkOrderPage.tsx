@@ -1,61 +1,98 @@
 import { Button, Form, Input, Select } from "antd";
 import { AgGridReact } from "ag-grid-react";
-import { useRef } from "react";
-
-import "ag-grid-community/styles/ag-grid.css";
-import "ag-grid-community/styles/ag-theme-alpine.css";
-import { ValueFormatterParams } from "ag-grid-community";
-import { WorkOrderSelectEditor } from "../components/WorkOrderSelectEditor.tsx";
+import { useRef, useState } from "react";
+import { WorkOrderGrid } from "../components/WorkOrderGrid";
+import { WorkOrderGroupPopup, type WorkOrderOption } from "../components/WorkOrderGroupPopup";
 
 export interface WorkOrder {
   workNumber: string;
   factoryCode: string;
-  factoryName: string;
+  lineCode: string;
+  productGroupCode: string;
 }
 
-const workOrders: WorkOrder[] = [
-  { workNumber: "WO-2026-00001", factoryCode: "fac1", factoryName: "공장1" },
-  { workNumber: "WO-2026-00002", factoryCode: "fac1", factoryName: "공장1" },
-  { workNumber: "WO-2026-00003", factoryCode: "fac2", factoryName: "공장2" },
-  { workNumber: "WO-2026-00004", factoryCode: "fac2", factoryName: "공장2" },
-  { workNumber: "WO-2026-00005", factoryCode: "fac1", factoryName: "공장1" },
-  { workNumber: "WO-2026-00006", factoryCode: "fac2", factoryName: "공장2" },
-  { workNumber: "WO-2026-00007", factoryCode: "fac1", factoryName: "공장1" },
-  { workNumber: "WO-2026-00008", factoryCode: "fac2", factoryName: "공장2" },
+const factoryOptions: WorkOrderOption[] = [
+  { label: "공장1", value: "fac1" },
+  { label: "공장2", value: "fac2" },
 ];
 
-const originals = workOrders.map((row) => ({ ...row }));
+const lineOptions: WorkOrderOption[] = [
+  { label: "A라인", value: "line1a", parent: "fac1" },
+  { label: "B라인", value: "line1b", parent: "fac1" },
+  { label: "C라인", value: "line2c", parent: "fac2" },
+  { label: "D라인", value: "line2d", parent: "fac2" },
+];
+
+const groupOptions: WorkOrderOption[] = [
+  { label: "DRAM", value: "g-dram", parent: "line1a" },
+  { label: "NAND", value: "g-nand", parent: "line1a" },
+  { label: "Foundry", value: "g-foundry", parent: "line1b" },
+  { label: "CIS", value: "g-cis", parent: "line1b" },
+  { label: "OLED", value: "g-oled", parent: "line2c" },
+  { label: "LCD", value: "g-lcd", parent: "line2c" },
+  { label: "원통형", value: "g-cyl", parent: "line2d" },
+  { label: "파우치형", value: "g-pouch", parent: "line2d" },
+];
+
+const ALL_WORK_ORDERS: WorkOrder[] = [
+  { workNumber: "WO-2026-00001", factoryCode: "fac1", lineCode: "line1a", productGroupCode: "g-dram" },
+  { workNumber: "WO-2026-00002", factoryCode: "fac1", lineCode: "line1a", productGroupCode: "g-nand" },
+  { workNumber: "WO-2026-00003", factoryCode: "fac1", lineCode: "line1b", productGroupCode: "g-foundry" },
+  { workNumber: "WO-2026-00004", factoryCode: "fac2", lineCode: "line2c", productGroupCode: "g-oled" },
+  { workNumber: "WO-2026-00005", factoryCode: "fac1", lineCode: "line1b", productGroupCode: "g-cis" },
+  { workNumber: "WO-2026-00006", factoryCode: "fac2", lineCode: "line2d", productGroupCode: "g-cyl" },
+  { workNumber: "WO-2026-00007", factoryCode: "fac2", lineCode: "line2c", productGroupCode: "g-lcd" },
+  { workNumber: "WO-2026-00008", factoryCode: "fac2", lineCode: "line2d", productGroupCode: "g-pouch" },
+];
 
 export function WorkOrderPage() {
   const gridRef = useRef<AgGridReact<WorkOrder>>(null);
+  const [form] = Form.useForm<{ workNumber?: string; factory?: string }>();
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [originals, setOriginals] = useState<WorkOrder[]>([]);
+  const [searched, setSearched] = useState(false);
+  const [popupRow, setPopupRow] = useState<WorkOrder | null>(null);
 
-  const factoryOptions = [
-    { label: "공장1", value: "fac1" },
-    { label: "공장2", value: "fac2" },
-  ];
+  const replaceRow = (next: WorkOrder) => {
+    setWorkOrders((prev) => prev.map((row) => (row.workNumber === next.workNumber ? next : row)));
+  };
+
   return (
     <>
-      <Form>
+      <Form
+        form={form}
+        onFinish={(values) => {
+          const keyword = values.workNumber?.trim();
+          const rows = ALL_WORK_ORDERS.filter((row) => {
+            if (keyword && !row.workNumber.includes(keyword)) return false;
+            if (values.factory && row.factoryCode !== values.factory) return false;
+            return true;
+          }).map((row) => ({ ...row }));
+          setWorkOrders(rows);
+          setOriginals(rows.map((row) => ({ ...row })));
+          setSearched(true);
+        }}
+      >
         <Form.Item name="workNumber" label="작업지시번호">
           <Input />
         </Form.Item>
         <Form.Item name="factory" label="공장">
-          <Select options={factoryOptions} />
+          <Select allowClear options={factoryOptions} />
         </Form.Item>
-        <Button type="primary">조회</Button>
+        <Button type="primary" htmlType="submit">
+          조회
+        </Button>
         <Button
           onClick={() => {
-            const changed: { workNumber: string; from: string; to: string }[] = [];
-            gridRef.current?.api.forEachNode((node) => {
-              const row = node.data;
-              if (!row) return;
+            const changed = workOrders.flatMap((row) => {
               const original = originals.find((item) => item.workNumber === row.workNumber);
-              if (!original || original.factoryCode === row.factoryCode) return;
-              changed.push({
-                workNumber: row.workNumber,
-                from: original.factoryCode,
-                to: row.factoryCode,
+              if (!original) return [];
+              const fields = (["factoryCode", "lineCode", "productGroupCode"] as const).flatMap((field) => {
+                if (original[field] === row[field]) return [];
+                return [{ field, from: original[field], to: row[field] }];
               });
+              if (!fields.length) return [];
+              return [{ workNumber: row.workNumber, fields }];
             });
             console.log("수정된 작업지시", changed);
           }}
@@ -63,24 +100,35 @@ export function WorkOrderPage() {
           저장
         </Button>
       </Form>
-      <section className="ag-theme-alpine grid-surface">
-        <AgGridReact<WorkOrder>
-          ref={gridRef}
+
+      {searched ? (
+        <WorkOrderGrid
+          gridRef={gridRef}
           rowData={workOrders}
-          columnDefs={[
-            { field: "workNumber", headerName: "작업지시번호" },
-            { field: "factoryCode", headerName: "공장",
-              valueFormatter: (params: ValueFormatterParams<WorkOrder>) =>
-                factoryOptions.find((item) => item.value === params.value)?.label ?? "",
-              editable:true,
-              cellEditor:WorkOrderSelectEditor,
-              cellEditorParams: {
-                options: factoryOptions,
-              },
-            },
-          ]}
+          factoryOptions={factoryOptions}
+          lineOptions={lineOptions}
+          groupOptions={groupOptions}
+          onRowChange={replaceRow}
+          onProductGroupClick={setPopupRow}
         />
-      </section>
+      ) : (
+        <div className="grid-empty">조회를 누르면 작업지시가 나타납니다</div>
+      )}
+
+      <WorkOrderGroupPopup
+        open={Boolean(popupRow)}
+        value={popupRow?.productGroupCode}
+        options={groupOptions.filter((item) => item.parent === popupRow?.lineCode)}
+        onCancel={() => setPopupRow(null)}
+        onSelect={(code) => {
+          if (!popupRow) return;
+          const next = { ...popupRow, productGroupCode: code };
+          const node = gridRef.current?.api.getRowNode(popupRow.workNumber);
+          node?.setData(next);
+          replaceRow(next);
+          setPopupRow(null);
+        }}
+      />
     </>
   );
 }
