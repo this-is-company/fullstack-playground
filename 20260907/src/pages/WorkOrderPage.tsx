@@ -1,4 +1,5 @@
 import { Button, Form, Input, Select } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
 import { AgGridReact } from "ag-grid-react";
 import { useRef, useState } from "react";
 import { WorkOrderGrid } from "../components/WorkOrderGrid";
@@ -45,12 +46,23 @@ const ALL_WORK_ORDERS: WorkOrder[] = [
   { workNumber: "WO-2026-00008", factoryCode: "fac2", lineCode: "line2d", productGroupCode: "g-pouch" },
 ];
 
+function optionLabel(options: WorkOrderOption[], value?: string) {
+  return options.find((item) => item.value === value)?.label ?? "";
+}
+
+function groupsForFactory(factory?: string) {
+  if (!factory) return groupOptions;
+  const lines = new Set(lineOptions.filter((item) => item.parent === factory).map((item) => item.value));
+  return groupOptions.filter((item) => item.parent && lines.has(item.parent));
+}
+
 export function WorkOrderPage() {
   const gridRef = useRef<AgGridReact<WorkOrder>>(null);
-  const [form] = Form.useForm<{ workNumber?: string; factory?: string }>();
+  const [form] = Form.useForm<{ workNumber?: string; factory?: string; productGroupCode?: string }>();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [originals, setOriginals] = useState<WorkOrder[]>([]);
   const [searched, setSearched] = useState(false);
+  const [searchPopupOpen, setSearchPopupOpen] = useState(false);
   const [popupRow, setPopupRow] = useState<WorkOrder | null>(null);
 
   const replaceRow = (next: WorkOrder) => {
@@ -66,6 +78,7 @@ export function WorkOrderPage() {
           const rows = ALL_WORK_ORDERS.filter((row) => {
             if (keyword && !row.workNumber.includes(keyword)) return false;
             if (values.factory && row.factoryCode !== values.factory) return false;
+            if (values.productGroupCode && row.productGroupCode !== values.productGroupCode) return false;
             return true;
           }).map((row) => ({ ...row }));
           setWorkOrders(rows);
@@ -77,7 +90,30 @@ export function WorkOrderPage() {
           <Input />
         </Form.Item>
         <Form.Item name="factory" label="공장">
-          <Select allowClear options={factoryOptions} />
+          <Select
+            allowClear
+            options={factoryOptions}
+            onChange={() => form.setFieldValue("productGroupCode", undefined)}
+          />
+        </Form.Item>
+        <Form.Item label="제품군" shouldUpdate>
+          {() => {
+            const code = form.getFieldValue("productGroupCode") as string | undefined;
+            return (
+              <Input
+                readOnly
+                allowClear
+                value={optionLabel(groupOptions, code)}
+                placeholder="제품군 선택"
+                suffix={<SearchOutlined />}
+                onClick={() => setSearchPopupOpen(true)}
+                onChange={() => form.setFieldValue("productGroupCode", undefined)}
+              />
+            );
+          }}
+        </Form.Item>
+        <Form.Item name="productGroupCode" hidden>
+          <Input />
         </Form.Item>
         <Button type="primary" htmlType="submit">
           조회
@@ -115,6 +151,16 @@ export function WorkOrderPage() {
         <div className="grid-empty">조회를 누르면 작업지시가 나타납니다</div>
       )}
 
+      <WorkOrderGroupPopup
+        open={searchPopupOpen}
+        value={form.getFieldValue("productGroupCode")}
+        options={groupsForFactory(form.getFieldValue("factory"))}
+        onCancel={() => setSearchPopupOpen(false)}
+        onSelect={(code) => {
+          form.setFieldValue("productGroupCode", code);
+          setSearchPopupOpen(false);
+        }}
+      />
       <WorkOrderGroupPopup
         open={Boolean(popupRow)}
         value={popupRow?.productGroupCode}
