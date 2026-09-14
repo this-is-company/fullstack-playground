@@ -50,20 +50,23 @@ function optionLabel(options: WorkOrderOption[], value?: string) {
   return options.find((item) => item.value === value)?.label ?? "";
 }
 
-function groupsForFactory(factory?: string) {
-  if (!factory) return groupOptions;
-  const lines = new Set(lineOptions.filter((item) => item.parent === factory).map((item) => item.value));
-  return groupOptions.filter((item) => item.parent && lines.has(item.parent));
-}
-
 export function WorkOrderPage() {
   const gridRef = useRef<AgGridReact<WorkOrder>>(null);
-  const [form] = Form.useForm<{ workNumber?: string; factory?: string; productGroupCode?: string }>();
+  const [form] = Form.useForm<{
+    workNumber?: string;
+    factory?: string;
+    lineCode?: string;
+    productGroupCode?: string;
+  }>();
+  const factory = Form.useWatch("factory", form);
+  const lineCode = Form.useWatch("lineCode", form);
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [originals, setOriginals] = useState<WorkOrder[]>([]);
   const [searched, setSearched] = useState(false);
   const [searchPopupOpen, setSearchPopupOpen] = useState(false);
   const [popupRow, setPopupRow] = useState<WorkOrder | null>(null);
+
+  const lineSelectOptions = lineOptions.filter((item) => item.parent === factory);
 
   const replaceRow = (next: WorkOrder) => {
     setWorkOrders((prev) => prev.map((row) => (row.workNumber === next.workNumber ? next : row)));
@@ -78,6 +81,7 @@ export function WorkOrderPage() {
           const rows = ALL_WORK_ORDERS.filter((row) => {
             if (keyword && !row.workNumber.includes(keyword)) return false;
             if (values.factory && row.factoryCode !== values.factory) return false;
+            if (values.lineCode && row.lineCode !== values.lineCode) return false;
             if (values.productGroupCode && row.productGroupCode !== values.productGroupCode) return false;
             return true;
           }).map((row) => ({ ...row }));
@@ -92,7 +96,20 @@ export function WorkOrderPage() {
         <Form.Item name="factory" label="공장">
           <Select
             allowClear
+            placeholder="공장 선택"
             options={factoryOptions}
+            onChange={() => {
+              form.setFieldValue("lineCode", undefined);
+              form.setFieldValue("productGroupCode", undefined);
+            }}
+          />
+        </Form.Item>
+        <Form.Item name="lineCode" label="라인">
+          <Select
+            allowClear
+            placeholder={factory ? "라인 선택" : "공장을 먼저 선택하세요"}
+            disabled={!factory}
+            options={lineSelectOptions}
             onChange={() => form.setFieldValue("productGroupCode", undefined)}
           />
         </Form.Item>
@@ -103,10 +120,14 @@ export function WorkOrderPage() {
               <Input
                 readOnly
                 allowClear
+                disabled={!lineCode}
                 value={optionLabel(groupOptions, code)}
-                placeholder="제품군 선택"
+                placeholder={lineCode ? "제품군 선택" : "라인을 먼저 선택하세요"}
                 suffix={<SearchOutlined />}
-                onClick={() => setSearchPopupOpen(true)}
+                onClick={() => {
+                  if (!lineCode) return;
+                  setSearchPopupOpen(true);
+                }}
                 onChange={() => form.setFieldValue("productGroupCode", undefined)}
               />
             );
@@ -154,7 +175,7 @@ export function WorkOrderPage() {
       <WorkOrderGroupPopup
         open={searchPopupOpen}
         value={form.getFieldValue("productGroupCode")}
-        options={groupsForFactory(form.getFieldValue("factory"))}
+        options={groupOptions.filter((item) => item.parent === lineCode)}
         onCancel={() => setSearchPopupOpen(false)}
         onSelect={(code) => {
           form.setFieldValue("productGroupCode", code);
