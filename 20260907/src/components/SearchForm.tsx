@@ -1,10 +1,10 @@
-import { Button, Col, Divider, Row, Select, Space } from "antd";
+import { Button, Col, Row, Select, Space } from "antd";
 import { DownOutlined, ReloadOutlined, SearchOutlined, UpOutlined } from "@ant-design/icons";
 import { useState } from "react";
 import type { FieldKey, FieldMeta, SearchValues } from "../types";
 import { FIELD_META, modeLabel } from "../types";
 import { childFieldsOf, getOptions, keepValidCodes } from "../mock/hierarchy";
-import { isAllSelected } from "../utils/selectedLabel";
+import { MultiSelect } from "./MultiSelect";
 import { MultiSelectPopup } from "./MultiSelectPopup";
 import { ProductGroupPopup } from "./ProductGroupPopup";
 
@@ -77,69 +77,14 @@ function fieldControl(meta: FieldMeta, value: SearchValues, apply: (field: Field
   }
 
   if (meta.mode === "multiSelect") {
-    const allSelected = isAllSelected(selected, options.map((item) => item.value));
     return (
-      <div className="multi-field">
-        <Select
-          mode="multiple"
-          allowClear
-          showSearch
-          maxTagCount={allSelected ? 1 : "responsive"}
-          maxTagPlaceholder={allSelected ? () => "전체선택" : (omitted) => `외 ${omitted.length}개`}
-          tagRender={(props) => {
-            if (allSelected && props.value !== selected[0]) return <></>;
-            return (
-              <span className="ant-select-selection-item">
-                <span className="ant-select-selection-item-content">{allSelected ? "전체선택" : props.label}</span>
-                {allSelected ? null : (
-                  <span
-                    className="ant-select-selection-item-remove"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                    }}
-                    onClick={props.onClose}
-                  >
-                    ×
-                  </span>
-                )}
-              </span>
-            );
-          }}
-          optionFilterProp="label"
-          placeholder={disabled ? "상위 조건을 먼저 선택하세요" : `${meta.label} 선택 (여러 개)`}
-          disabled={disabled}
-          value={selected}
-          options={options}
-          onChange={(codes) => apply(meta.key, codes)}
-          dropdownRender={(menu) => (
-            <>
-              <div className="select-bulk">
-                <Button
-                  type="link"
-                  size="small"
-                  disabled={disabled || !options.length || allSelected}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => apply(meta.key, options.map((item) => item.value))}
-                >
-                  전체 선택 ({options.length})
-                </Button>
-                <Button type="link" size="small" disabled={!selected.length} onMouseDown={(e) => e.preventDefault()} onClick={() => apply(meta.key, [])}>
-                  선택해제
-                </Button>
-                <span>
-                  {allSelected ? "전체선택" : `${selected.length}/${options.length}`}
-                </span>
-              </div>
-              <Divider style={{ margin: "4px 0" }} />
-              {menu}
-            </>
-          )}
-        />
-        <span className={`select-count${selected.length ? "" : " is-empty"}`}>
-          {allSelected ? "전체" : `${selected.length}개`}
-        </span>
-      </div>
+      <MultiSelect
+        label={meta.label}
+        disabled={disabled}
+        options={options}
+        value={selected}
+        onChange={(codes) => apply(meta.key, codes)}
+      />
     );
   }
 
